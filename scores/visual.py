@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
+from vlm import VLMInterface
 
 def score_visual_clarity(
     vp: str | pathlib.Path,
@@ -47,15 +48,13 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     else:
         exposure_penalty = 0.0
 
-    print("blur_penalty, exposure_penalty: ", blur_penalty, exposure_penalty)
-
     return max(blur_penalty, exposure_penalty)
 
 if __name__ == '__main__':
     score = score_visual_clarity(
         vp='input_video.mp4',
         st={},            # no state needed
-        vlm=None,
+        vlm=VLMInterface(),
         task=None,
         nom=None,
     )
