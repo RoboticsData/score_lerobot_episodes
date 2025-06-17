@@ -38,22 +38,44 @@ def main():
     args = ap.parse_args()
 
     pairs = discover_episodes(args.dataset, args.camera)
-    scorer = DatasetScorer(None)#VLMInterface())
-    rows, mean = [], 0.
+    scorer = DatasetScorer(VLMInterface())
+    # ------------------------------------------------------------------
+    #  Evaluate every episode
+    # ------------------------------------------------------------------
+    rows, agg_mean = [], 0.0
 
     for vid_path, pq_path in pairs:
         state = load_state_from_parquet(pq_path)
-        score, _ = scorer.score(vid_path, state, args.task, args.nominal)
-        rows.append((vid_path.name, score))
-        mean += score
+        total, subs = scorer.score(vid_path, state, args.task, args.nominal)
+        rows.append((vid_path.name, total, subs))
+        agg_mean += total
 
-    mean /= len(rows)
-    print("\nEpisode scores")
-    print("──────────────")
-    for name, s in rows:
-        print(f"{name:<20s}  {s:.3f}  {'GOOD' if s >= 0.75 else 'BAD'}")
-    print("──────────────")
-    print(f"Average over {len(rows)} episodes: {mean:.3f}")
+    agg_mean /= len(rows)
+
+    # ------------------------------------------------------------------
+    #  Pretty-print results
+    # ------------------------------------------------------------------
+    crit_names = list(scorer.criteria.keys())         # preserve order
+    header = ["Episode"] + crit_names + ["Aggregate", "Status"]
+    col_fmt = "{:<20}" + "{:>11.3f}" * len(crit_names) + "  {:>10.3f}  {}"
+
+    print("\nEpisode scores (0 – 1 scale)")
+    print("─" * (20 + 12 * (len(crit_names) + 2)))
+
+    # header row
+    print("{:<20}".format(header[0]) +
+          "".join(f"{h:>11s}" for h in header[1:-1]) +
+          f"  {header[-2]:>10s}  {header[-1]}")
+
+    # episode rows
+    for name, total, subs in rows:
+        status = "GOOD" if total >= 0.75 else "BAD"
+        per_cat = [subs[k] for k in crit_names]
+        print(col_fmt.format(name, *per_cat, total, status))
+
+    print("─" * (20 + 12 * (len(crit_names) + 2)))
+    print(f"Average aggregate over {len(rows)} episodes: {agg_mean:.3f}")
+
 
 if __name__ == "__main__":
     main()
