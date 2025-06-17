@@ -27,7 +27,6 @@ def score_visual_clarity(
             penalty = score_negative_visual_quality_opencv(frame)
 
         penalties.append(float(penalty))
-    print(np.mean(penalties))
     cap.release()
     return 0.0 if not penalties else max(0.0, 1.0 - np.mean(penalties))
 

@@ -42,7 +42,6 @@ class VLMInterface:
                 "temperature": 0.0,
             },
         )
-        print(response)
         j = json.loads(response.text)#candidates[0].content.text)
         return j["score"]
     
