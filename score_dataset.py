@@ -7,18 +7,25 @@ from scores import score_task_success, score_visual_clarity, score_smoothness, s
 
 
 class DatasetScorer:
-    def __init__(self, vlm: VLMInterface):
+    def __init__(self, vlm: VLMInterface, time_stats: dict):
+        def runtime_with_stats(vp, st, vlm, task, nominal):
+            return score_runtime(
+                vp, st, vlm, task, nominal,
+                time_stats=self.time_stats,       # ← new
+                outlier_penalty=0.0,              # or whatever you like
+            )
         self.vlm = vlm
         self.criteria = {
-            "task_success":        (25, score_task_success),
+            # "task_success":        (25, score_task_success),
             "visual_clarity":      (10, score_visual_clarity),
             "smoothness":          (15, score_smoothness),
-            "path_efficiency":     (10, score_path_efficiency),
+            # "path_efficiency":     (10, score_path_efficiency),
             "collision":           (15, score_collision),
-            "runtime":              (5, score_runtime),
-            "joint_stability":         (5, score_joint_stability),
-            "gripper_consistency":  (5, score_gripper_consistency),
+            "runtime":              (5, runtime_with_stats),
+            # "joint_stability":         (5, score_joint_stability),
+            # "gripper_consistency":  (5, score_gripper_consistency),
         }
+        self.time_stats = time_stats
         self.norm = sum(w for w, _ in self.criteria.values())
 
     def score(self, video_path, state, task, nominal):
@@ -38,7 +45,9 @@ def main():
     args = ap.parse_args()
 
     pairs = discover_episodes(args.dataset, args.camera)
-    scorer = DatasetScorer(VLMInterface())
+    states = [load_state_from_parquet(pq) for _, pq in pairs]
+    time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
+    scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
