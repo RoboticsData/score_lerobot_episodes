@@ -43,12 +43,10 @@ def score_task_success(vp, st, vlm, task, nom): return vlm.task_success(str(vp),
 
 def score_runtime(vp, st, vlm, task, nom,
                   time_stats: dict | None = None,
-                  outlier_penalty: float = 0.):
+                  outlier_penalty: float = 0.0):
     """
     • If `time_stats` is supplied, an episode whose length is an outlier
       (see helper above) gets `outlier_penalty` (default 0 → fail hard).
-    • Otherwise we keep the original exponential decay:
-        exp(- duration / nom)
       If `nom` is <=0, we fall back to the *global* mean duration.
     """
     t = st["t"]
@@ -58,8 +56,4 @@ def score_runtime(vp, st, vlm, task, nom,
     if time_stats and is_time_outlier(duration, time_stats):
         return outlier_penalty
 
-    # 1-b  Nominal time  -------------------------------------------------
-    if not nom or nom <= 0:
-        nom = time_stats["mean"] if time_stats else duration
-
-    return float(np.exp(-duration / nom))
+    return 1
