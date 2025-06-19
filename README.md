@@ -1,16 +1,10 @@
 # **LeRobot Episode Scoring Toolkit**
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AskYoutubeAI/AskVideos-VideoCLIP/main/AskVideosVideoClipLogo.png" height="250" alt="AskVideos-VideoCLIP" />
+  <img src="https://raw.githubusercontent.com/AskYoutubeAI/AskVideos-VideoCLIP/main/AskVideosVideoClipLogo.png" height="250" alt="LeRobotEpisodeScoringToolkit" />
 </p>
 <p align="center">
   <em>A lightweight toolkit for quantitatively scoring LeRobot episodes.</em>
-</p>
-<p align="center">
-    <a href='https://huggingface.co/AskYoutube/AskVideos-VideoCLIP-v0.1'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoint-blue'></a>
-    <a target="_blank" href="https://colab.research.google.com/drive/1kVzoQUS3phupujY-8Bym0nHezRRyd0YQ">
-        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-    </a>
 </p>
 <p align="center">
 
