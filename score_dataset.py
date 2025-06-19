@@ -18,10 +18,10 @@ class DatasetScorer:
         self.vlm = vlm
         self.criteria = {
             # "task_success":        (25, score_task_success),
-            "visual_clarity":      (10, score_visual_clarity),
-            "smoothness":          (15, score_smoothness),
-            "collision":           (15, score_collision),
-            "runtime":              (5, runtime_with_stats),
+            "visual_clarity":      (20, score_visual_clarity),
+            "smoothness":          (10, score_smoothness),
+            "collision":           (10, score_collision),
+            "runtime":              (20, runtime_with_stats),
             # "path_efficiency":     (10, score_path_efficiency),
             # "joint_stability":         (5, score_joint_stability),
             # "gripper_consistency":  (5, score_gripper_consistency),
