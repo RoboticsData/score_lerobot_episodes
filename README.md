@@ -1,5 +1,3 @@
-# **LeRobot Episode Scoring Toolkit**
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/sammyatman/score_lerobot_episodes/refs/heads/main/LeRobotEpisodeScoringToolkit.png" height="250" alt="LeRobotEpisodeScoringToolkit" />
 </p>
@@ -8,6 +6,7 @@
 </p>
 <p align="center">
 
+# **LeRobot Episode Scoring Toolkit**
 
 It combines classic Computer Vision heuristics (blur / exposure tests, kinematic smoothness, collision spikes …) with optional Gemini-powered vision–language checks to give each episode a **0 – 1 score** for multiple quality dimensions.
 
@@ -37,3 +36,7 @@ export GOOGLE_API_KEY="sk-..."      # Required only if you use VLM-based scoring
 ## Example
 HF_USER='...'
 python score_dataset.py --dataset /path/to/data/${HF_USER}/open-book --task "Open the book"
+```
+
+## Term of Use
+LeRobot Episode Scoring Toolkit is distributed under the Apache 2.0 license.
