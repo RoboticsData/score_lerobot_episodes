@@ -20,9 +20,9 @@ class DatasetScorer:
             # "task_success":        (25, score_task_success),
             "visual_clarity":      (10, score_visual_clarity),
             "smoothness":          (15, score_smoothness),
-            # "path_efficiency":     (10, score_path_efficiency),
             "collision":           (15, score_collision),
             "runtime":              (5, runtime_with_stats),
+            # "path_efficiency":     (10, score_path_efficiency),
             # "joint_stability":         (5, score_joint_stability),
             # "gripper_consistency":  (5, score_gripper_consistency),
         }
@@ -48,7 +48,7 @@ def main():
     pairs = discover_episodes(args.dataset, args.camera)
     states = [load_state_from_parquet(pq) for _, pq in pairs]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
-    scorer = DatasetScorer(VLMInterface(), time_stats=time_stats)#VLMInterface())
+    scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
