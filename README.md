@@ -1,6 +1,20 @@
 # **LeRobot Episode Scoring Toolkit**
 
-A lightweight toolkit for **quantitatively scoring LeRobot episodes**.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AskYoutubeAI/AskVideos-VideoCLIP/main/AskVideosVideoClipLogo.png" height="250" alt="AskVideos-VideoCLIP" />
+</p>
+<p align="center">
+  <em>A lightweight toolkit for quantitatively scoring LeRobot episodes.</em>
+</p>
+<p align="center">
+    <a href='https://huggingface.co/AskYoutube/AskVideos-VideoCLIP-v0.1'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoint-blue'></a>
+    <a target="_blank" href="https://colab.research.google.com/drive/1kVzoQUS3phupujY-8Bym0nHezRRyd0YQ">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+    </a>
+</p>
+<p align="center">
+
+
 It combines classic Computer Vision heuristics (blur / exposure tests, kinematic smoothness, collision spikes …) with optional Gemini-powered vision–language checks to give each episode a **0 – 1 score** for multiple quality dimensions.
 
 ---
