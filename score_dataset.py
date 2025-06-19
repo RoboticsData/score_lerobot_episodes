@@ -48,7 +48,7 @@ def main():
     pairs = discover_episodes(args.dataset, args.camera)
     states = [load_state_from_parquet(pq) for _, pq in pairs]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
-    scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
+    scorer = DatasetScorer(VLMInterface(), time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
