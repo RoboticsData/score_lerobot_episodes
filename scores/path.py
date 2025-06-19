@@ -2,11 +2,11 @@ import numpy as np
 
 def rms(x, axis=None): return float(np.sqrt(np.mean(np.square(x), axis=axis)))
 
-def score_smoothness(vp, st, vlm, task, nom):
+def score_smoothness(vp, st, vlm, task, nom, *, k: float = 1000.0):
     q, t = st.get("q"), st["t"]
     if q is None: return 0.
     accel = np.diff(q, 2, 0) / np.diff(t)[:-1, None]**2
-    score = float(np.exp(-rms(accel) / 10.))
+    score = float(np.exp(-rms(accel) / k))
     return score
 
 def score_path_efficiency(vp, st, vlm, task, nom):
@@ -31,7 +31,7 @@ def score_collision(vp, st, vlm, task, nom):
     accel = np.diff(q, n=2, axis=0) / (np.diff(t)[:-1, None] ** 2)
 
     # Detect "spikes" in joint-space acceleration
-    threshold = 3.0 * np.median(np.abs(accel), axis=0, keepdims=True)
+    threshold = 15.0 * np.median(np.abs(accel), axis=0, keepdims=True)
     spike_mask = np.any(np.abs(accel) > threshold, axis=1)
 
     # Score is high if few or no spikes
