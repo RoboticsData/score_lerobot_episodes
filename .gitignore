@@ -4,4 +4,5 @@ input_video.mp4
 scores/__pycache__/path.cpython-311.pyc
 scores/__pycache__/__init__.cpython-311.pyc
 scores/__pycache__/vlm.cpython-311.pyc
-scores/__pycache__/visual.cpython-311.pyc
+scores/__pycache__/*
+__pycache__/*
