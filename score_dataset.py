@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 from vlm import VLMInterface
 from data import discover_episodes, load_state_from_parquet
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
+from scores import build_time_stats           # (your helper from the other file)
 
 
 class DatasetScorer:
@@ -78,7 +79,7 @@ def main():
 
     # episode rows
     for name, total, subs in rows:
-        status = "GOOD" if total >= 0.75 else "BAD"
+        status = "GOOD" if total >= 0.5 else "BAD"
         per_cat = [subs[k] for k in crit_names]
         print(col_fmt.format(name, *per_cat, total, status))
 
