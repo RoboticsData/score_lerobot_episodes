@@ -1,7 +1,7 @@
 # **score_lerobot_episodes**
 
-A lightweight toolkit for **quantitatively evaluating Lerobot demonstration videos**.  
-It combines classic CV heuristics (blur / exposure tests, kinematic smoothness, collision spikes …) with optional Gemini-powered vision–language checks to give each episode a **0 – 1 score** for multiple quality dimensions.
+A lightweight toolkit for **quantitatively scoring LeRobot episodes**.
+It combines classic Computer Vision heuristics (blur / exposure tests, kinematic smoothness, collision spikes …) with optional Gemini-powered vision–language checks to give each episode a **0 – 1 score** for multiple quality dimensions.
 
 ---
 
