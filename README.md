@@ -1,4 +1,4 @@
-# **score_lerobot_episodes**
+# **LeRobot Episode Scoring Toolkit**
 
 A lightweight toolkit for **quantitatively scoring LeRobot episodes**.
 It combines classic Computer Vision heuristics (blur / exposure tests, kinematic smoothness, collision spikes …) with optional Gemini-powered vision–language checks to give each episode a **0 – 1 score** for multiple quality dimensions.
