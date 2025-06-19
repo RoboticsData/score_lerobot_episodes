@@ -36,14 +36,12 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
 
     # 1-a  Sharpness (variance of Laplacian)
     fm = cv2.Laplacian(gray, cv2.CV_64F).var()
-    blur_penalty = max(0.0, min(1.0, (80.0 - fm) / 80.0))  # 0 good → 1 bad
+    blur_penalty = max(0.0, min(1.0, 1 - fm/80.0))  # 0 good → 1 bad
 
     # 1-b  Exposure
     mean_intensity = gray.mean()
     if mean_intensity < 50:                           # too dark
         exposure_penalty = (50.0 - mean_intensity) / 50.0
-    elif mean_intensity > 200:                        # too bright
-        exposure_penalty = (mean_intensity - 200.0) / 55.0
     else:
         exposure_penalty = 0.0
 
