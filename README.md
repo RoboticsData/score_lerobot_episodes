@@ -38,5 +38,9 @@ HF_USER='...'
 python score_dataset.py --dataset /path/to/data/${HF_USER}/open-book --task "Open the book"
 ```
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=AskYoutubeAI/AskVideos-VideoCLIP&type=Date)](https://star-history.com/#AskYoutubeAI/AskVideos-VideoCLIP&Date)
+
 ## Term of Use
 LeRobot Episode Scoring Toolkit is distributed under the Apache 2.0 license.
