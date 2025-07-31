@@ -28,15 +28,48 @@ It combines classic Computer Vision heuristics (blur / exposure tests, kinematic
 
 ## ⚙️  Installation
 
-```bash
-# clone your repo first
-pip install -r requirements.txt
-export GOOGLE_API_KEY="sk-..."      # Required only if you use VLM-based scoring
-
-## Example
-HF_USER='...'
-python score_dataset.py --dataset /path/to/data/${HF_USER}/open-book --task "Open the book"
+### Installation
 ```
+git clone git@github.com:RoboticsData/score_lerobot_episodes.git
+cd score_lerobot_episodes
+
+uv venv
+source .venv/bin/activate
+uv sync  # installs dependencies expressed in pyproject.toml and uv.lock
+
+python -c 'import score_dataset' || echo 'Something is wrong, check dependencies'
+
+# Test if you're logged into the hugginface CLI:
+hf auth whoami
+# If not, go to https://huggingface.co/settings/tokens, make a new token, and login:
+hf auth login
+```
+
+### Usage
+
+```
+# in the score_lerobot_episodes directory:
+
+source .venv/bin/activate
+
+# Fetch a dataset from HuggingFace, example:
+PATH_TO_HF_DATASET=`hf download Rorschach4153/so101_60_new --repo-type dataset`
+
+## TODO make tool injest HF repo names instead of local paths to cached snapshots
+python score_dataset.py --dataset ${PATH_TO_HF_DATASET} --task "none" --camera 'phone'
+```
+
+### Adding dependencies
+
+Use ```uv add``` to add dependencies, then ensure you commit changes to pyproject.toml and uv.lock.
+
+#### Python versions
+
+We opt for keeping ```.python-version``` in the repo as a way to interlock the Python
+runtime version with installed dependecy versions. Python packages express
+dependence on difference Python versions, so Python itself effectively becomes
+a dependency.
+
 
 ## Star History
 

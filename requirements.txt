@@ -1,5 +1,0 @@
-opencv_python
-numpy
-pandas
-google-generativeai
-pydantic
