@@ -9,7 +9,6 @@ import hashlib
 import pickle
 import os
 import uniplot
-from pprint import pprint
 
 class DatasetScorer:
     def __init__(self, vlm: VLMInterface, time_stats: dict):
@@ -71,7 +70,6 @@ def main():
 
         for r in rows:
             agg_total += r[1]
-        # TODO compute agg_mean
     else:
         for vid_path, pq_path in pairs:
             state = load_state_from_parquet(pq_path)
@@ -82,10 +80,13 @@ def main():
         with open(CACHE_FILE_PATH, "wb") as file:
             pickle.dump(rows, file)
 
-    agg_mean = agg_total / len(rows)
+    if len(rows):
+        agg_mean = agg_total / len(rows)
+
     # ------------------------------------------------------------------
     #  Pretty-print results
     # ------------------------------------------------------------------
+
     crit_names = list(scorer.criteria.keys())         # preserve order
     header = ["Episode"] + crit_names + ["Aggregate", "Status"]
     col_fmt = "{:<20}" + "{:>11.3f}" * len(crit_names) + "  {:>10.3f}  {}"
@@ -107,7 +108,6 @@ def main():
     for name, total, subs in rows:
         status = "GOOD" if total >= 0.5 else "BAD"
         per_cat = [subs[k] for k in crit_names]
-        print(per_cat)
         per_cat = []
         for k in crit_names:
             per_cat.append(subs[k])
@@ -118,7 +118,6 @@ def main():
     print(f"Average aggregate over {len(rows)} episodes: {agg_mean:.3f}")
 
     print('')
-    pprint(distributions)
     for k in crit_names:
         uniplot.histogram(distributions[k],
                           bins=20,
