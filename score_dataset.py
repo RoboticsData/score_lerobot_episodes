@@ -2,7 +2,7 @@ import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
-from data import discover_episodes, load_state_from_parquet
+from data import load_dataset_hf
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
 import hashlib
@@ -19,6 +19,7 @@ class DatasetScorer:
                 outlier_penalty=0.0,              # or whatever you like
             )
         self.vlm = vlm
+        # TODO: If visual_clarity or runtime is too low, make it bad automatically
         self.criteria = {
             # "task_success":        (25, score_task_success),
             "visual_clarity":      (20, score_visual_clarity),
@@ -43,20 +44,14 @@ class DatasetScorer:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True, type=pathlib.Path)
-    ap.add_argument("--task", required=True)
     ap.add_argument("--nominal", type=float)
-    # TODO camera choice needs to be discovered from data
-    ap.add_argument("--camera", default='')  #, choices=["shoulder", "wrist", 'phone', 'laptop'])
-    ap.add_argument("--ignore-cache", action='store_true', default=False)
     args = ap.parse_args()
 
-    # XXX primitive hash for caching results, TODO evolve (include
-    # DatasetScorer settings, organize code better)
-    name_hash = hashlib.md5((str(args.dataset) + str(args.task) + str(args.camera) + str(args.nominal)).encode('utf-8')).hexdigest()
-    CACHE_FILE_PATH = f'stats.{name_hash}.pickle'
+    dataset = load_dataset_hf(args.dataset)
+    task = dataset.meta.tasks
+    vid_paths = dataset.get_episodes_file_paths()
+    states = [dataset[i]["observation.state"] for i in range(len(dataset))]
 
-    pairs = discover_episodes(args.dataset, args.camera)
-    states = [load_state_from_parquet(pq) for _, pq in pairs]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
     scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
@@ -64,9 +59,11 @@ def main():
     # ------------------------------------------------------------------
     rows, agg_total, agg_mean = [], 0.0, 0.0
 
-    if not args.ignore_cache and os.path.exists(CACHE_FILE_PATH):
-        with open(CACHE_FILE_PATH, "rb") as file:
-            rows = pickle.load(file)
+    for vid_path, pq_path in pairs:
+        state = load_state_from_parquet(pq_path)
+        total, subs = scorer.score(vid_path, state, args.task, args.nominal)
+        rows.append((vid_path.name, total, subs))
+        agg_mean += total
 
         for r in rows:
             agg_total += r[1]
