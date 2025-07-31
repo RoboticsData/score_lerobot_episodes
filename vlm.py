@@ -2,6 +2,9 @@ import pathlib, base64, cv2, numpy as np, google.generativeai as genai
 from pydantic import BaseModel, Field
 import json
 
+from dotenv import load_dotenv
+load_dotenv()
+
 class ScoreOutput(BaseModel):
     score: float
 

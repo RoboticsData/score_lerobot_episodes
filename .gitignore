@@ -6,3 +6,8 @@ scores/__pycache__/__init__.cpython-311.pyc
 scores/__pycache__/vlm.cpython-311.pyc
 scores/__pycache__/*
 __pycache__/*
+.env
+*~
+*.swp
+*.swo
+stats.*.pickle
