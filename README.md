@@ -28,15 +28,40 @@ It combines classic Computer Vision heuristics (blur / exposure tests, kinematic
 
 ## ⚙️  Installation
 
-```bash
-# clone your repo first
-pip install -r requirements.txt
-export GOOGLE_API_KEY="sk-..."      # Required only if you use VLM-based scoring
-
-## Example
-HF_USER='...'
-python score_dataset.py --dataset /path/to/data/${HF_USER}/open-book --task "Open the book"
+### Installation
 ```
+git clone git@github.com:RoboticsData/score_lerobot_episodes.git
+cd score_lerobot_episodes
+
+uv venv
+source .venv/bin/activate
+# TODO install deps
+
+# crude sanity check for dependencies, should return nothing
+python -c 'import score_dataset'
+```
+
+### Usage
+
+```
+# in the score_lerobot_episodes directory:
+
+source .venv/bin/activate  # any time you have a fresh terminal
+
+## TODO full working example
+```
+
+### Adding Python dependencies
+
+Use ```uv add``` to add dependencies, then ensure you commit changes to pyproject.toml and uv.lock.
+
+### Python versions
+
+We opt for keeping .python-version in the repo as a way to interlock the Python
+runtime version with installed dependecy versions. Python packages express
+dependence on difference Python versions, so Python itself effectively becomes
+a dependency.
+
 
 ## Star History
 
