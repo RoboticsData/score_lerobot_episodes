@@ -35,7 +35,7 @@ cd score_lerobot_episodes
 
 uv venv
 source .venv/bin/activate
-# TODO install deps
+uv sync  # install dependencies
 
 # crude sanity check for dependencies, should return nothing
 python -c 'import score_dataset'
@@ -46,9 +46,18 @@ python -c 'import score_dataset'
 ```
 # in the score_lerobot_episodes directory:
 
-source .venv/bin/activate  # any time you have a fresh terminal
+# any time you start with a fresh terminal
+source .venv/bin/activate
 
-## TODO full working example
+# You may need to set up your HuggingFace CLI first:
+#    ```hf auth whoami``` will tell you if you're logged in
+#    ```hf auth login``` will let you log in
+
+# Fetch a dataset from HuggingFace, example:
+PATH_TO_HF_DATASET=`hf download Rorschach4153/so101_60_new --repo-type dataset`
+
+## TODO make tool injest HF repo names instead of local paths to cached snapshots
+python score_dataset.py --dataset ${PATH_TO_HF_DATASET} --task "none" --camera 'phone'
 ```
 
 ### Adding Python dependencies
