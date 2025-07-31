@@ -2,7 +2,7 @@ import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
-from data import discover_episodes, load_state_from_parquet
+from data import load_dataset_hf
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
 
@@ -16,6 +16,7 @@ class DatasetScorer:
                 outlier_penalty=0.0,              # or whatever you like
             )
         self.vlm = vlm
+        # TODO: If visual_clarity or runtime is too low, make it bad automatically
         self.criteria = {
             # "task_success":        (25, score_task_success),
             "visual_clarity":      (20, score_visual_clarity),
@@ -40,19 +41,28 @@ class DatasetScorer:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True, type=pathlib.Path)
-    ap.add_argument("--task", required=True)
     ap.add_argument("--nominal", type=float)
-    ap.add_argument("--camera", default="shoulder", choices=["shoulder", "wrist"])
     args = ap.parse_args()
 
-    pairs = discover_episodes(args.dataset, args.camera)
-    states = [load_state_from_parquet(pq) for _, pq in pairs]
+    dataset = load_dataset_hf(args.dataset)
+    task = dataset.meta.tasks
+    print(task)
+    exit()
+    vid_paths = dataset.get_episodes_file_paths()
+    print(dataset.episodes, dataset.meta.total_episodes)
+    exit()
+    print(len(vid_paths), len(dataset))
+    exit()
+    states = [dataset[i]["observation.state"] for i in range(len(dataset))]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
     scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
     rows, agg_mean = [], 0.0
+
+    #for ep_idx in range(dataset.meta.total_episodes):
+        
 
     for vid_path, pq_path in pairs:
         state = load_state_from_parquet(pq_path)
