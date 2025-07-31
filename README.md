@@ -35,10 +35,9 @@ cd score_lerobot_episodes
 
 uv venv
 source .venv/bin/activate
-uv sync  # install dependencies
+uv sync  # installs dependencies expressed in pyproject.toml and uv.lock
 
-# crude sanity check for dependencies, should return nothing
-python -c 'import score_dataset'
+python -c 'import score_dataset' || echo 'Something is wrong, check dependencies'
 ```
 
 ### Usage
@@ -46,7 +45,6 @@ python -c 'import score_dataset'
 ```
 # in the score_lerobot_episodes directory:
 
-# any time you start with a fresh terminal
 source .venv/bin/activate
 
 # You may need to set up your HuggingFace CLI first:
@@ -60,11 +58,11 @@ PATH_TO_HF_DATASET=`hf download Rorschach4153/so101_60_new --repo-type dataset`
 python score_dataset.py --dataset ${PATH_TO_HF_DATASET} --task "none" --camera 'phone'
 ```
 
-### Adding Python dependencies
+### Adding dependencies
 
 Use ```uv add``` to add dependencies, then ensure you commit changes to pyproject.toml and uv.lock.
 
-### Python versions
+#### Python versions
 
 We opt for keeping .python-version in the repo as a way to interlock the Python
 runtime version with installed dependecy versions. Python packages express
