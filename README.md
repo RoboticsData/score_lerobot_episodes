@@ -38,6 +38,11 @@ source .venv/bin/activate
 uv sync  # installs dependencies expressed in pyproject.toml and uv.lock
 
 python -c 'import score_dataset' || echo 'Something is wrong, check dependencies'
+
+# Test if you're logged into the hugginface CLI:
+hf auth whoami
+# If not, go to https://huggingface.co/settings/tokens, make a new token, and login:
+hf auth login
 ```
 
 ### Usage
@@ -46,10 +51,6 @@ python -c 'import score_dataset' || echo 'Something is wrong, check dependencies
 # in the score_lerobot_episodes directory:
 
 source .venv/bin/activate
-
-# You may need to set up your HuggingFace CLI first:
-#    ```hf auth whoami``` will tell you if you're logged in
-#    ```hf auth login``` will let you log in
 
 # Fetch a dataset from HuggingFace, example:
 PATH_TO_HF_DATASET=`hf download Rorschach4153/so101_60_new --repo-type dataset`
@@ -64,7 +65,7 @@ Use ```uv add``` to add dependencies, then ensure you commit changes to pyprojec
 
 #### Python versions
 
-We opt for keeping .python-version in the repo as a way to interlock the Python
+We opt for keeping ```.python-version``` in the repo as a way to interlock the Python
 runtime version with installed dependecy versions. Python packages express
 dependence on difference Python versions, so Python itself effectively becomes
 a dependency.
