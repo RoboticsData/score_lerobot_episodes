@@ -10,12 +10,7 @@ def discover_episodes(root: pathlib.Path, camera: str) -> List[Tuple[pathlib.Pat
     data_root = root / "data"
     videos = {}
     for chunk in sorted(video_root.glob("chunk-*")):
-        cam_dir = None
-        if camera:
-            print(f'camera is {camera}')
-            cam_dir = chunk / f"observation.images.{camera}"
-        else:
-            cam_dir = chunk / f"observation.image"
+        cam_dir = chunk / f"observation.images.{camera}"
         if not cam_dir.is_dir(): continue
         for mp4 in cam_dir.glob("episode_*.mp4"):
             m = VID_NAME_RE.match(mp4.name)
@@ -48,10 +43,7 @@ def load_state_from_parquet(pq_path: pathlib.Path) -> Dict[str, np.ndarray]:
     if "observation.state" not in df.columns:
         raise KeyError(f"{pq_path}: missing 'observation.state'")
     full_state = np.stack(df["observation.state"].to_numpy())
-    if len(full_state) >= 6:
-        state["q"] = full_state[:, :5].astype(np.float32)  # shoulder_pan → wrist_roll
-        state["grip"] = full_state[:, 5] > 0.5             # gripper.pos → bool
-    else:
-        print('warning: observation.state has less than 6 elements: {full_state}')
+    state["q"] = full_state[:, :5].astype(np.float32)  # shoulder_pan → wrist_roll
+    state["grip"] = full_state[:, 5] > 0.5             # gripper.pos → bool
 
     return state
