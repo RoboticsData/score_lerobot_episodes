@@ -52,7 +52,7 @@ def main():
     episode_map = organize_by_episode(dataset)
 
 
-    # All states. TODO: Compute stats by episode instead.
+    # Compute runtimes stats of all episodes.
     states = [episode_map[i]['states'] for i in episode_map]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
 
@@ -63,40 +63,57 @@ def main():
     rows, agg_mean = [], 0.0
 
     for episode_index in episode_map:
-        # TODO: Organize by camera type instead of just first.
-        first_camera_type = list(episode_map[episode_index]['vid_paths'].keys())[0]
-        vid_path = episode_map[episode_index]['vid_paths'][first_camera_type]
-        states = episode_map[episode_index]['states']
-        total, subs = scorer.score(vid_path, states, task, args.nominal)
-        rows.append((vid_path, total, subs))
-        agg_mean += total
+        episode = episode_map[episode_index]
+        episode_total = 0
+        for camera_type in episode['vid_paths']:
+            vid_path = episode['vid_paths'][camera_type]
+            states = episode['states']
+            total, subs = scorer.score(vid_path, states, task, args.nominal)
+            rows.append((episode_index, camera_type, vid_path, total, subs))
+            episode_total += total
+        agg_mean += episode_total / len(episode['vid_paths'])
 
     agg_mean /= len(rows)
 
     # ------------------------------------------------------------------
     #  Pretty-print results
     # ------------------------------------------------------------------
-    crit_names = list(scorer.criteria.keys())         # preserve order
-    header = ["Episode"] + crit_names + ["Aggregate", "Status"]
-    col_fmt = "{:<20}" + "{:>11.3f}" * len(crit_names) + "  {:>10.3f}  {}"
+    crit_names = list(scorer.criteria.keys())
 
-    print("\nEpisode scores (0 – 1 scale)")
-    print("─" * (20 + 12 * (len(crit_names) + 2)))
-
-    # header row
-    print("{:<20}".format(header[0]) +
-          "".join(f"{h:>11s}" for h in header[1:-1]) +
-          f"  {header[-2]:>10s}  {header[-1]}")
-
-    # episode rows
-    for name, total, subs in rows:
-        status = "GOOD" if total >= 0.5 else "BAD"
-        per_cat = [subs[k] for k in crit_names]
-        print(col_fmt.format(name, *per_cat, total, status))
-
-    print("─" * (20 + 12 * (len(crit_names) + 2)))
-    print(f"Average aggregate over {len(rows)} episodes: {agg_mean:.3f}")
-
+    EP_W, CAM_W, SC_W, AG_W = 8, 30, 11, 10          # col widths
+    score_fmt = f'{{:>{SC_W}.3f}}'                    # one per-criterion cell
+    col_fmt   = (
+        f'{{:<{EP_W}}}{{:<{CAM_W}}}'                 # Episode | Camera
+        + score_fmt * len(crit_names)                # each criterion
+        + f'  {{:>{AG_W}.3f}}  {{}}'                 # Aggregate | Status
+    )
+    
+    header_line = (
+        f'{"Episode":<{EP_W}}{"Camera":<{CAM_W}}'
+        + ''.join(f'{h:>{SC_W}s}' for h in crit_names)
+        + f'  {"Aggregate":>{AG_W}s}  Status'
+    )
+    
+    divider = '─' * len(header_line)
+    
+    print('\nEpisode scores (0–1 scale)')
+    print(divider)
+    print(header_line)
+    
+    for ep_idx, cam, _vid_path, total, subs in rows:
+        print(
+            col_fmt.format(
+                ep_idx,
+                cam,
+                *[subs[k] for k in crit_names],
+                total,
+                'GOOD' if total >= 0.5 else 'BAD'
+            )
+        )
+    
+    print(divider)
+    print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
+    
 
 if __name__ == "__main__":
     main()
