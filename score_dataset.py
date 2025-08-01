@@ -2,7 +2,7 @@ import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
-from data import load_dataset_hf
+from data import organize_by_episode, load_dataset_hf
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
 
@@ -30,10 +30,10 @@ class DatasetScorer:
         self.time_stats = time_stats
         self.norm = sum(w for w, _ in self.criteria.values())
 
-    def score(self, video_path, state, task, nominal):
+    def score(self, video_path, states, task, nominal):
         subs, total = {}, 0.
         for k, (w, fn) in self.criteria.items():
-            val = fn(video_path, state, self.vlm, task, nominal)
+            val = fn(video_path, states, self.vlm, task, nominal)
             subs[k] = val
             total += w * val
         return total / self.norm, subs
@@ -44,30 +44,31 @@ def main():
     ap.add_argument("--nominal", type=float)
     args = ap.parse_args()
 
+    # Load dataset.
     dataset = load_dataset_hf(args.dataset)
     task = dataset.meta.tasks
-    print(task)
-    exit()
-    vid_paths = dataset.get_episodes_file_paths()
-    print(dataset.episodes, dataset.meta.total_episodes)
-    exit()
-    print(len(vid_paths), len(dataset))
-    exit()
-    states = [dataset[i]["observation.state"] for i in range(len(dataset))]
+
+    # This maps episode_id to video path (by camera key), states and actions.
+    episode_map = organize_by_episode(dataset)
+
+
+    # All states. TODO: Compute stats by episode instead.
+    states = [episode_map[i]['states'] for i in episode_map]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
+
     scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
     rows, agg_mean = [], 0.0
 
-    #for ep_idx in range(dataset.meta.total_episodes):
-        
-
-    for vid_path, pq_path in pairs:
-        state = load_state_from_parquet(pq_path)
-        total, subs = scorer.score(vid_path, state, args.task, args.nominal)
-        rows.append((vid_path.name, total, subs))
+    for episode_index in episode_map:
+        # TODO: Organize by camera type instead of just first.
+        first_camera_type = list(episode_map[episode_index]['vid_paths'].keys())[0]
+        vid_path = episode_map[episode_index]['vid_paths'][first_camera_type]
+        states = episode_map[episode_index]['states']
+        total, subs = scorer.score(vid_path, states, task, args.nominal)
+        rows.append((vid_path, total, subs))
         agg_mean += total
 
     agg_mean /= len(rows)
