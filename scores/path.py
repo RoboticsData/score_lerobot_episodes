@@ -6,9 +6,7 @@ def score_smoothness(vp, sts, vlm, task, nom, *, k: float = 1000.0):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
-        # TODO: Alert of misformatted data
-        print('Bad data: ', states)
-        return 0
+        raise ValueError('Invalid state vector')
     accel = np.diff(states, 2, 0) / np.diff(timestamps)[:-1, None]**2
     scores = float(np.exp(-rms(accel) / k))
     return np.mean(scores)
@@ -17,9 +15,7 @@ def score_path_efficiency(vp, sts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
-        # TODO: Alert of misformatted data
-        print('Bad data: ', states)
-        return 0
+        raise ValueError('Invalid state vector')
     # Joint-space path length
     path = np.sum(np.linalg.norm(np.diff(states, axis=0), axis=1))
 
@@ -33,9 +29,7 @@ def score_collision(vp, sts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
-        # TODO: Alert of misformatted data
-        print('Bad data: ', states)
-        return 0
+        raise ValueError('Invalid state vector')
 
     # Compute second derivative (acceleration proxy) in joint space
     accel = np.diff(states, n=2, axis=0) / (np.diff(timestamps)[:-1, None] ** 2)
@@ -53,9 +47,7 @@ def score_joint_stability(vp, sts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
-        print('Bad data: ', states)
-        # TODO: Alert of misformatted data
-        return 0
+        raise ValueError('Invalid state vector')
 
     # Consider the final 2 seconds of the episode
     mask = timestamps >= timestamps[-1] - 2.0
@@ -74,9 +66,7 @@ def score_gripper_consistency(vp, sts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
-        print('Bad data: ', states)
-        # TODO: Alert of misformatted data
-        return 0
+        raise ValueError('Invalid state vector')
 
     grip = np.array([st.get("grip") for st in sts])
     #prob = vlm.task_success(str(vp), "The robot is holding the object.")
