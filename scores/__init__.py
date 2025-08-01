@@ -51,8 +51,6 @@ def score_runtime(vp, sts, vlm, task, nom,
     timestamps = np.array([st["t"] for st in sts])
     duration = timestamps[-1] - timestamps[0]
 
-    print(time_stats, timestamps, duration)
-
     # 1-a  Outlier check  ------------------------------------------------
     if time_stats and is_time_outlier(duration, time_stats):
         return outlier_penalty
