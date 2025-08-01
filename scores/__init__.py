@@ -9,8 +9,7 @@ def build_time_stats(states):
              (monotonically increasing timestamps, shape (N,))
     Returns  – dict with mean/std + Tukey–IQR fences for outlier tests
     """
-    durs = [s["t"][-1] - s["t"][0] for s in states
-            if "t" in s and len(s["t"]) > 1]
+    durs = [s[-1]["t"] - s[0]["t"] for s in states]
     if not durs:                                 # fallback if nothing valid
         return {"mean": 0., "std": 0., "q1": 0., "q3": 0., "iqr": 0.}
 
@@ -39,9 +38,9 @@ def is_time_outlier(duration, stats, mode="iqr", z_thresh=3.):
         z = abs(duration - stats["mean"]) / stats["std"]
         return z > z_thresh
 
-def score_task_success(vp, st, vlm, task, nom): return vlm.task_success(str(vp), task) if vlm is not None else 0.5
+def score_task_success(vp, sts, vlm, task, nom): return vlm.task_success(str(vp), task) if vlm is not None else 0.5
 
-def score_runtime(vp, st, vlm, task, nom,
+def score_runtime(vp, sts, vlm, task, nom,
                   time_stats: dict | None = None,
                   outlier_penalty: float = 0.0):
     """
@@ -49,8 +48,10 @@ def score_runtime(vp, st, vlm, task, nom,
       (see helper above) gets `outlier_penalty` (default 0 → fail hard).
       If `nom` is <=0, we fall back to the *global* mean duration.
     """
-    t = st["t"]
-    duration = t[-1] - t[0]
+    timestamps = np.array([st["t"] for st in sts])
+    duration = timestamps[-1] - timestamps[0]
+
+    print(time_stats, timestamps, duration)
 
     # 1-a  Outlier check  ------------------------------------------------
     if time_stats and is_time_outlier(duration, time_stats):
