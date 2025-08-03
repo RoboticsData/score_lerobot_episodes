@@ -6,7 +6,7 @@ import os
 
 def load_dataset_hf(repo_id, root=None, revision=None):
     ds_meta = LeRobotDatasetMetadata(
-        repo_id, root=root, revision=revision
+        repo_id, root=root, revision=revision, force_cache_sync=True
     )
     #delta_timestamps = resolve_delta_timestamps(cfg.policy, ds_meta)
     dataset = LeRobotDataset(
