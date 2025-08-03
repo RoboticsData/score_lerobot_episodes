@@ -43,7 +43,7 @@ class DatasetScorer:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True, type=pathlib.Path)
+    ap.add_argument("--dataset", required=True, type=str)
     ap.add_argument("--nominal", type=float)
     args = ap.parse_args()
 
