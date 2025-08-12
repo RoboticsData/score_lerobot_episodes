@@ -1,49 +1,67 @@
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
+import glob
+from lerobot.common.datasets.lerobot_dataset import LeRobotDatasetMetadata, LeRobotDataset
+import os
 
-VID_NAME_RE = re.compile(r"episode_(\d+)\.mp4$")
-PARQ_NAME_RE = re.compile(r"episode_(\d+)\.parquet$")
+def load_dataset_hf(repo_id, root=None, revision=None):
+    ds_meta = LeRobotDatasetMetadata(
+        repo_id, root=root, revision=revision, force_cache_sync=True
+    )
+    #delta_timestamps = resolve_delta_timestamps(cfg.policy, ds_meta)
+    dataset = LeRobotDataset(
+        repo_id,
+        root=root,
+        #episodes=episodes,
+        #delta_timestamps=delta_timestamps,
+        #image_transforms=image_transforms,
+        #revision=revision,
+        #video_backend=cfg.dataset.video_backend,
+    )
+    camera_keys = ds_meta.camera_keys
+    return dataset
 
-def discover_episodes(root: pathlib.Path, camera: str) -> List[Tuple[pathlib.Path, pathlib.Path]]:
-    root = root.expanduser().resolve()
-    video_root = root / "videos"
-    data_root = root / "data"
-    videos = {}
-    for chunk in sorted(video_root.glob("chunk-*")):
-        cam_dir = chunk / f"observation.images.{camera}"
-        if not cam_dir.is_dir(): continue
-        for mp4 in cam_dir.glob("episode_*.mp4"):
-            m = VID_NAME_RE.match(mp4.name)
-            if m: videos[m.group(1)] = mp4
-    data = {}
-    for chunk in sorted(data_root.glob("chunk-*")):
-        for pq in chunk.glob("episode_*.parquet"):
-            m = PARQ_NAME_RE.match(pq.name)
-            if m: data[m.group(1)] = pq
-    common_ids = sorted(set(videos) & set(data))
-    return [(videos[i], data[i]) for i in common_ids]
 
-def load_state_from_parquet(pq_path: pathlib.Path) -> Dict[str, np.ndarray]:
-    """
-    Load Lerobot parquet file with compact `observation.state` array:
-        - observation.state           → shape (T, 6), float32
-        - observation.eef_pos_x/y/z  → EE position
-        - timestamp                  → time
-        - observation.contacts       → optional boolean
-    """
-    df = pd.read_parquet(pq_path)
-    state: Dict[str, np.ndarray] = {}
+def organize_by_episode(dataset):
+    episode_map = {}
+    vid_paths = filter(lambda x: '.mp4' in x, dataset.get_episodes_file_paths())
 
-    # timestamps
-    if "timestamp" not in df.columns:
-        raise KeyError(f"{pq_path}: missing 'timestamp'")
-    state["t"] = df["timestamp"].to_numpy(dtype=np.float32)
+    # Organize videos.
+    for vid_path in vid_paths:
+        stubs = vid_path.split('/')
+        episode_name, camera_type = stubs[-1], stubs[-2]
+        episode_idx = int(episode_name.split('_')[1].split('.mp4')[0])
+        if episode_idx not in episode_map:
+            episode_map[episode_idx] = {
+                'vid_paths' : {}
+            }
+        vid_path = os.path.join(dataset.root, vid_path)
+        episode_map[episode_idx]['vid_paths'][camera_type] = vid_path
+ 
+    # Organize actions.
+    # We don't need to load videos at this step.
+    camera_keys = filter(lambda x: 'observation.images' in x, list(dataset.meta.features.keys()))
+    for k in camera_keys:
+        dataset.meta.features.pop(k, None)
 
-    # observation.state → joint positions (first 5) + gripper
-    if "observation.state" not in df.columns:
-        raise KeyError(f"{pq_path}: missing 'observation.state'")
-    full_state = np.stack(df["observation.state"].to_numpy())
-    state["q"] = full_state[:, :5].astype(np.float32)  # shoulder_pan → wrist_roll
-    state["grip"] = full_state[:, 5] > 0.5             # gripper.pos → bool
+    for dataset_idx in range(len(dataset)):
+        timestamp = dataset[dataset_idx]["timestamp"]
+        state = dataset[dataset_idx]["observation.state"]
+        action = dataset[dataset_idx]["action"]
+        episode_idx = dataset[dataset_idx]["episode_index"].item()
 
-    return state
+        if 'states' not in episode_map[episode_idx]:
+            episode_map[episode_idx]['states'] = []
+
+        if 'actions' not in episode_map[episode_idx]:
+            episode_map[episode_idx]['actions'] = []
+ 
+        episode_map[episode_idx]['states'].append(
+            {
+                "q": state,
+                "t": timestamp
+            }
+        )
+        episode_map[episode_idx]['actions'].append(action)
+
+    return episode_map

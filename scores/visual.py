@@ -5,10 +5,10 @@ from vlm import VLMInterface
 
 def score_visual_clarity(
     vp: str | pathlib.Path,
-    st,                       # unused but kept for signature compatibility
+    sts,                       # unused but kept for signature compatibility
     vlm,                      # may be None
     task, nom,                # also unused here
-    sample_every: int = 20
+    sample_every: int = 60
 ) -> float:
     cap = cv2.VideoCapture(str(vp))
     penalties, i = [], 0
@@ -50,7 +50,7 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
 if __name__ == '__main__':
     score = score_visual_clarity(
         vp='input_video.mp4',
-        st={},            # no state needed
+        sts=[{}],            # no state needed
         vlm=VLMInterface(),
         task=None,
         nom=None,
