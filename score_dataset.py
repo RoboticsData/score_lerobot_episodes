@@ -44,6 +44,7 @@ class DatasetScorer:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True, type=str)
+    ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--nominal", type=float)
     args = ap.parse_args()
 
@@ -75,27 +76,12 @@ def main():
             rows.append((episode_index, camera_type, vid_path, total, subs))
             episode_total += total
         agg_mean += episode_total / len(episode['vid_paths'])
-
-        for r in rows:
-            agg_total += r[1]
-    else:
-        for vid_path, pq_path in pairs:
-            state = load_state_from_parquet(pq_path)
-            total, subs = scorer.score(vid_path, state, args.task, args.nominal)
-            rows.append((vid_path.name, total, subs))
-            agg_total += total
-
-        with open(CACHE_FILE_PATH, "wb") as file:
-            pickle.dump(rows, file)
-
-    if len(rows):
-        agg_mean = agg_total / len(rows)
+    agg_mean /= len(rows)
 
     # ------------------------------------------------------------------
     #  Pretty-print results
     # ------------------------------------------------------------------
     crit_names = list(scorer.criteria.keys())
-<<<<<<< HEAD
 
     EP_W, CAM_W, SC_W, AG_W = 8, 30, 11, 10          # col widths
     score_fmt = f'{{:>{SC_W}.3f}}'                    # one per-criterion cell
