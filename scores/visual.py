@@ -8,7 +8,7 @@ def score_visual_clarity(
     sts,                       # unused but kept for signature compatibility
     vlm,                      # may be None
     task, nom,                # also unused here
-    sample_every: int = 20
+    sample_every: int = 60
 ) -> float:
     cap = cv2.VideoCapture(str(vp))
     penalties, i = [], 0
