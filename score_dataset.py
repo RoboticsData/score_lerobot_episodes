@@ -46,6 +46,7 @@ def main():
     ap.add_argument("--dataset", required=True, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--nominal", type=float)
+    ap.add_argument("--plot", required=False, type=bool, default=False)
     args = ap.parse_args()
 
     # Load dataset.
@@ -123,8 +124,9 @@ def main():
     print(divider)
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
-    for k in crit_names:
-        uniplot.histogram(distributions[k],
+    if args.plot:
+        for k in crit_names:
+            uniplot.histogram(distributions[k],
                           bins=20,
                           bins_min=0,  # avoid breaking if all data lands in 1 bucket
                           title=f'distribution for {k}',
