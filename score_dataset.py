@@ -95,6 +95,7 @@ def main():
     #  Pretty-print results
     # ------------------------------------------------------------------
     crit_names = list(scorer.criteria.keys())
+<<<<<<< HEAD
 
     EP_W, CAM_W, SC_W, AG_W = 8, 30, 11, 10          # col widths
     score_fmt = f'{{:>{SC_W}.3f}}'                    # one per-criterion cell
