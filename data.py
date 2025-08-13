@@ -98,8 +98,8 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
     new_episode_stats = []
     for i in range(len(episode_stats)):
         if episode_stats[i]['episode_index'] in good_episodes:
-            # TODO: Fix this, append to new_episode_stats
             episode_stats[i]['episode_index'] = good_episodes.index(episode_stats[i]['episode_index'])
+            new_episode_stats.append(episode_stats[i])
     save_jsonl(new_episode_stats, episode_stats_output_path)
 
     # meta/episodes.jsonl
@@ -109,9 +109,11 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
     episodes_data_output_path = os.path.join(output_path, 'meta/episodes.jsonl')
     episodes_data = load_jsonl(episodes_data_input_path)
     episodes_data = list(filter(lambda x: x['episode_index'] in good_episodes, episodes_data))
+    new_episodes_data = []
     for i in range(len(episodes_data)):
         if episodes_data[i]['episode_index'] in good_episodes:
             episodes_data[i]['episode_index'] = good_episodes.index(episodes_data[i]['episode_index'])
+            new_episodes_data.append(episodes_data[i])
     save_jsonl(new_episodes_data, episodes_data_output_path)
 
     # meta/tasks.jsonl
