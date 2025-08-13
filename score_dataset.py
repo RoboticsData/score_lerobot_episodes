@@ -2,7 +2,7 @@ import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
-from data import organize_by_episode, load_dataset_hf
+from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
 import hashlib
@@ -105,7 +105,7 @@ def main():
     print(header_line)
 
     distributions = {}
-    
+    good_episodes = {}
     for ep_idx, cam, _vid_path, total, subs in rows:
         for k in crit_names:
             if k not in distributions:
@@ -120,10 +120,21 @@ def main():
                 'GOOD' if total >= 0.5 else 'BAD'
             )
         )
-    
+        if ep_idx not in good_episodes or good_episodes[ep_idx]:
+            # Check both cameras, if at least one is false, we will set it to false
+            good_episodes[ep_idx] = (total >= 0.5)
+
     print(divider)
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
+    if args.output:
+        dataset_path = args.dataset
+        if not os.path.exists(dataset_path):
+            cache_dir = os.path.expanduser("~/.cache/huggingface/lerobot/")
+            dataset_path = os.path.join(cache_dir, dataset_path)
+        good_episodes_list = [k for k in good_episodes if good_episodes[k]]
+        save_filtered_dataset(dataset_path, args.output, good_episodes_list)
+        ds = load_dataset_hf(args.dataset, root=args.output)
     if args.plot:
         for k in crit_names:
             uniplot.histogram(distributions[k],
