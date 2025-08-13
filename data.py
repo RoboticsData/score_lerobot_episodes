@@ -8,7 +8,7 @@ import shutil
 
 def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     ds_meta = LeRobotDatasetMetadata(
-        repo_id, root=root, revision=revision, force_cache_sync=True
+        repo_id, root=root, revision=revision, force_cache_sync=False
     )
     #delta_timestamps = resolve_delta_timestamps(cfg.policy, ds_meta)
     dataset = LeRobotDataset(
