@@ -9,6 +9,8 @@ import hashlib
 import pickle
 import os
 import uniplot
+from lerobot.configs.train import TrainPipelineConfig
+from lerobot.scripts import train as lerobot_train
 
 class DatasetScorer:
     def __init__(self, vlm: VLMInterface, time_stats: dict):
@@ -46,6 +48,8 @@ def main():
     ap.add_argument("--dataset", required=True, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--nominal", type=float)
+    ap.add_argument("--train-baseline", type=bool, default=False)
+    ap.add_argument("--train-filtered", type=bool, default=False)
     ap.add_argument("--plot", required=False, type=bool, default=False)
     args = ap.parse_args()
 
@@ -135,6 +139,39 @@ def main():
         good_episodes_list = [k for k in good_episodes if good_episodes[k]]
         save_filtered_dataset(dataset_path, args.output, good_episodes_list)
         ds = load_dataset_hf(args.dataset, root=args.output)
+
+    # Training config required args.
+    #  --dataset.repo_id=${HF_USER}/trossen_ai_stationary_test \
+    #  --policy.type=act \
+    #  --output_dir=outputs/train/act_trossen_ai_stationary_test \
+    #  --job_name=act_trossen_ai_stationary_test \
+    #  --device=cuda \
+    #  --wandb.enable=true
+    
+    train_config = TrainPipelineConfig()
+    train_config.policy.type = 'act'
+    train_config.device = 'mps'
+    train_config.wandb.enable = True
+
+    if args.train_baseline:
+        # TODO: Start training policy on baseline dataset
+        train_config.dataset.repo_id = args.dataset
+        train_config.output_dir = './checkpoints/baseline'
+        os.makedirs(train_config.output_dir, exist_ok=True)
+        train_config.job_name = 'act_baseline_'+args.dataset.replace('/','_')
+        lerobot_train.train(train_config)
+
+
+    if args.train_filtered:
+        # TODO: Start training policy on filtered dataset
+        train_config.dataset.repo_id = args.dataset
+        train_config.dataset.root = args.output
+        train_config.output_dir = './checkpoints/filtered'
+        os.makedirs(train_config.output_dir, exist_ok=True)
+        train_config.job_name = 'act_filtered_'+args.dataset.replace('/','_')
+        lerobot_train.train(train_config)
+
+
     if args.plot:
         for k in crit_names:
             uniplot.histogram(distributions[k],
