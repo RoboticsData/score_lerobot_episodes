@@ -5,6 +5,7 @@ from vlm import VLMInterface
 from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
+from train import start_training
 import hashlib
 import pickle
 import os
@@ -154,23 +155,9 @@ def main():
     train_config.wandb.enable = True
 
     if args.train_baseline:
-        # TODO: Start training policy on baseline dataset
-        train_config.dataset.repo_id = args.dataset
-        train_config.output_dir = './checkpoints/baseline'
-        os.makedirs(train_config.output_dir, exist_ok=True)
-        train_config.job_name = 'act_baseline_'+args.dataset.replace('/','_')
-        lerobot_train.train(train_config)
-
-
+        start_training(args.dataset, output_dir='./checkpoints/baseline')
     if args.train_filtered:
-        # TODO: Start training policy on filtered dataset
-        train_config.dataset.repo_id = args.dataset
-        train_config.dataset.root = args.output
-        train_config.output_dir = './checkpoints/filtered'
-        os.makedirs(train_config.output_dir, exist_ok=True)
-        train_config.job_name = 'act_filtered_'+args.dataset.replace('/','_')
-        lerobot_train.train(train_config)
-
+        start_training(args.dataset, root=args.output, output_dir='./checkpoints/filtered')
 
     if args.plot:
         for k in crit_names:
