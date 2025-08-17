@@ -49,6 +49,8 @@ def rebuild_splits(splits, good_episodes):
 
 
 def save_filtered_dataset(input_path, output_path, good_episodes):
+    if os.path.exists(input_path) and os.path.exists(output_path) and os.path.samefile(input_path, output_path):
+        raise ValueError(f'Input and output path cannot be identical. Input path: {input_path} \nOutput path: {output_path}')
     good_episodes = sorted(good_episodes)
     # Read meta/info.json
     info_path = os.path.join(input_path, 'meta/info.json')
