@@ -46,7 +46,8 @@ class DatasetScorer:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True, type=str)
+    ap.add_argument("--repo_id", required=True, type=str)
+    ap.add_argument("--root", required=False, default=None, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--nominal", type=float)
     ap.add_argument("--train-baseline", type=bool, default=False)
@@ -55,7 +56,7 @@ def main():
     args = ap.parse_args()
 
     # Load dataset.
-    dataset = load_dataset_hf(args.dataset)
+    dataset = load_dataset_hf(args.repo_id, root=args.root)
     task = dataset.meta.tasks
 
     # This maps episode_id to video path (by camera key), states and actions.
@@ -133,13 +134,14 @@ def main():
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
     if args.output:
-        dataset_path = args.dataset
-        if not os.path.exists(dataset_path):
+        # Need to find actual dataset path on disk.
+        dataset_path = args.root
+        if not dataset_path:
             cache_dir = os.path.expanduser("~/.cache/huggingface/lerobot/")
-            dataset_path = os.path.join(cache_dir, dataset_path)
+            dataset_path = os.path.join(cache_dir, args.repo_id)
         good_episodes_list = [k for k in good_episodes if good_episodes[k]]
         save_filtered_dataset(dataset_path, args.output, good_episodes_list)
-        ds = load_dataset_hf(args.dataset, root=args.output)
+        ds = load_dataset_hf(args.repo_id, root=args.output)
 
     # Training config required args.
     #  --dataset.repo_id=${HF_USER}/trossen_ai_stationary_test \
@@ -149,15 +151,10 @@ def main():
     #  --device=cuda \
     #  --wandb.enable=true
     
-    train_config = TrainPipelineConfig()
-    train_config.policy.type = 'act'
-    train_config.device = 'mps'
-    train_config.wandb.enable = True
-
     if args.train_baseline:
-        start_training(args.dataset, output_dir='./checkpoints/baseline')
+        start_training(args.repo_id, root=args.root, output_dir='./checkpoints/baseline')
     if args.train_filtered:
-        start_training(args.dataset, root=args.output, output_dir='./checkpoints/filtered')
+        start_training(args.repo_id, root=args.output, output_dir='./checkpoints/filtered')
 
     if args.plot:
         for k in crit_names:
