@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 
-def start_training(repo_id, output_dir='./checkpoints/baseline', root=None, policy_name='act', **kwargs):
+def start_training(repo_id, root=None, output_dir='./checkpoints/baseline', policy_name='act', job_name='', **kwargs):
     dataset = DatasetConfig(repo_id=repo_id, root=root)
     policy = make_policy_config(policy_name)
     policy.chunk_size = 1
@@ -15,7 +15,8 @@ def start_training(repo_id, output_dir='./checkpoints/baseline', root=None, poli
 
     device = 'mps'
     output_dir = Path(output_dir)
-    job_name = 'act_baseline_'+repo_id.replace('/','_')
+    dataset_name = repo_id.replace('/', '_')
+    full_job_name = f"{job_name or 'train'}_{policy_name}_{dataset_name}"
     wandb_config = WandBConfig(enable=True)
 
     train_config = TrainPipelineConfig(
@@ -23,10 +24,15 @@ def start_training(repo_id, output_dir='./checkpoints/baseline', root=None, poli
         policy=policy,
         wandb=wandb_config,
         output_dir=output_dir,
-        job_name=job_name,
-        batch_size=1,
-        steps=100,
+        job_name=full_job_name,
+        batch_size=2,
+        steps=1000,
         #resume=True,
-        num_workers=1)
+        num_workers=0)
 
     lerobot_train.train(train_config)
+
+if __name__ == '__main__':
+    repo_id = 'sammyatman/open-book'
+    root="./output/sammyatman/open-book"
+    start_training(repo_id, output_dir='./checkpoints/baseline', root=root, policy_name='act')
