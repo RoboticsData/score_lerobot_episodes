@@ -6,6 +6,9 @@ import os
 import json
 import shutil
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     ds_meta = LeRobotDatasetMetadata(
         repo_id, root=root, revision=revision, force_cache_sync=False
@@ -39,19 +42,57 @@ def rebuild_splits(splits, good_episodes):
     for split in splits:
         start, end = splits[split].split(':')
         start, end = int(start), int(end)
-        split_min, split_max = start, end
-        for ep_idx in good_episodes:
+        split_min, split_max = end, start
+        for i, ep_idx in enumerate(good_episodes):
             if ep_idx >= start and ep_idx <= end:
-                split_min = min(split_min, ep_idx)
-                split_max = max(split_max, ep_idx)
+                split_min = min(split_min, i)
+                split_max = max(split_max, i)
         splits[split] = f"{split_min}:{split_max}"
     return splits
+
+def rewrite_episode_parquet(old_parquet_path, new_parquet_path, good_episodes, start_global_index):
+    table = pq.read_table(old_parquet_path)
+    n = table.num_rows
+    old_episode_idx = table['episode_index'][0].as_py()
+    new_episode_idx = good_episodes.index(old_episode_idx)
+
+    # Build/replace columns if present
+    def replace_or_add(table, name, array):
+        try:
+            i = table.schema.get_field_index(name)
+            if i != -1:
+                return table.set_column(i, name, array)
+        except Exception:
+            pass
+        return table.append_column(name, array)
+
+    # frame_index: 0..n-1
+    frame_idx_arr = pa.array(range(n), type=pa.int64())
+
+    # episode_index: constant = new_episode_idx
+    episode_idx_arr = pa.array([new_episode_idx] * n, type=pa.int64())
+
+    # global index: start_global_index .. start_global_index + n - 1
+    global_idx_arr = pa.array(range(start_global_index, start_global_index + n), type=pa.int64())
+
+    # Only replace existing columns; add if missing (safe for varied schemas)
+    if "frame_index" in table.column_names:
+        table = replace_or_add(table, "frame_index", frame_idx_arr)
+    if "episode_index" in table.column_names:
+        table = replace_or_add(table, "episode_index", episode_idx_arr)
+    if "index" in table.column_names:
+        table = replace_or_add(table, "index", global_idx_arr)
+
+    os.makedirs(os.path.dirname(new_parquet_path), exist_ok=True)
+    pq.write_table(table, new_parquet_path, compression="zstd")
+
+    return n  # rows written
 
 
 def save_filtered_dataset(input_path, output_path, good_episodes):
     if os.path.exists(input_path) and os.path.exists(output_path) and os.path.samefile(input_path, output_path):
         raise ValueError(f'Input and output path cannot be identical. Input path: {input_path} \nOutput path: {output_path}')
-    good_episodes = sorted(good_episodes)
+    good_episodes = sorted(list(set(good_episodes)))
     # Read meta/info.json
     info_path = os.path.join(input_path, 'meta/info.json')
     info = json.load(open(info_path))
@@ -68,6 +109,7 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
     # Copy videos from videos/chunk-*/{camera_key}/episode_*.mp4
     camera_keys = list(filter(lambda x: 'images' in x, info['features'].keys()))
     total_videos = 0
+    start_global_index = 0
     for old_chunk_key in episode_map:
         new_chunk_key = episode_map[old_chunk_key]
 
@@ -75,6 +117,14 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
         new_parquet_path = os.path.join(output_path, 'data', new_chunk_key+'.parquet')
         os.makedirs(os.path.dirname(new_parquet_path), exist_ok=True)
         shutil.copy2(old_parquet_path, new_parquet_path)
+
+        # Update parquet records.
+        n_written_records = rewrite_episode_parquet(
+            old_parquet_path,
+            new_parquet_path,
+            good_episodes,
+            start_global_index)
+        start_global_index += n_written_records
 
         for cam in camera_keys:
             old_video_key = os.path.join(old_chunk_key.split('/')[0], cam, old_chunk_key.split('/')[1])+'.mp4'
