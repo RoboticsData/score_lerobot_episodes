@@ -5,13 +5,13 @@ from lerobot.configs.default import DatasetConfig, EvalConfig, WandBConfig
 from lerobot.common.policies.factory import make_policy_config
 import os
 from pathlib import Path
-
+import wandb
 
 def start_training(repo_id, root=None, output_dir='./checkpoints/baseline', policy_name='act', job_name='', **kwargs):
     dataset = DatasetConfig(repo_id=repo_id, root=root)
     policy = make_policy_config(policy_name)
-    policy.chunk_size = 1
-    policy.n_action_steps = 1
+    #policy.chunk_size = 1
+    #policy.n_action_steps = 1
 
     device = 'mps'
     output_dir = Path(output_dir)
@@ -25,12 +25,14 @@ def start_training(repo_id, root=None, output_dir='./checkpoints/baseline', poli
         wandb=wandb_config,
         output_dir=output_dir,
         job_name=full_job_name,
-        batch_size=2,
-        steps=1000,
+        batch_size=8,
+        steps=100,
+        log_freq=1,
         #resume=True,
         num_workers=0)
 
     lerobot_train.train(train_config)
+    wandb.finish()
 
 if __name__ == '__main__':
     repo_id = 'sammyatman/open-book'
