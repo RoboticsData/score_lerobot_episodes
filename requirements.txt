@@ -3,3 +3,5 @@ numpy
 pandas
 google-generativeai
 pydantic
+streamlit
+plotly
