@@ -41,7 +41,7 @@ def create_scoring_dashboard(results_df, distributions, agg_mean, criteria_names
         st.plotly_chart(fig, use_container_width=True)
         
         good_episodes = len(results_df[results_df["Status"] == "GOOD"])
-        total_episodes = len(results_df["Episode"].unique())
+        total_episodes = len(results_df)
         
         col_metric1, col_metric2, col_metric3 = st.columns(3)
         with col_metric1:
