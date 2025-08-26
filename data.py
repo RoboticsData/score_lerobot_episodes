@@ -1,7 +1,7 @@
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from typing import Dict, List, Tuple
 import glob
-from lerobot.common.datasets.lerobot_dataset import LeRobotDatasetMetadata, LeRobotDataset
+from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata, LeRobotDataset
 import os
 import json
 import shutil
