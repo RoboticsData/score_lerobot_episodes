@@ -5,3 +5,5 @@ google-generativeai
 pydantic
 streamlit
 plotly
+dotenv
+uniplot
