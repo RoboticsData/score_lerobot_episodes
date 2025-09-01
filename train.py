@@ -11,6 +11,7 @@ import torch
 def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_name='', **kwargs):
     dataset = DatasetConfig(repo_id=repo_id, root=root)
     policy = make_policy_config(policy_name)
+    policy.push_to_hub = False
     #policy.chunk_size = 1
     #policy.n_action_steps = 1
 
