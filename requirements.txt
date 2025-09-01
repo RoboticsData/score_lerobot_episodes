@@ -1,3 +1,4 @@
+lerobot
 opencv_python
 numpy
 pandas
