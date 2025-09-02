@@ -32,10 +32,11 @@ It combines classic Computer Vision heuristics (blur / exposure tests, kinematic
 # clone your repo first
 pip install -r requirements.txt
 export GOOGLE_API_KEY="sk-..."      # Required only if you use VLM-based scoring
+```
 
 ## Example
-HF_USER='...'
-python score_dataset.py --dataset /path/to/data/${HF_USER}/open-book --task "Open the book"
+```bash
+python score_dataset.py --repo_id Daddyboss/so_100_test4 --output ./output/Daddyboss/so_100_test4 --train-baseline=True --train-filtered=True
 ```
 
 ## Star History
