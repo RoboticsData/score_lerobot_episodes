@@ -12,6 +12,7 @@ import os
 import uniplot
 from lerobot.configs.train import TrainPipelineConfig
 from lerobot.scripts import train as lerobot_train
+from lerobot.constants import HF_LEROBOT_HOME
 
 class DatasetScorer:
     def __init__(self, vlm: VLMInterface, time_stats: dict):
@@ -138,7 +139,7 @@ def main():
         # Need to find actual dataset path on disk.
         dataset_path = args.root
         if not dataset_path:
-            cache_dir = os.path.expanduser("~/.cache/huggingface/lerobot/")
+            cache_dir = cache_dir = HF_LEROBOT_HOME
             dataset_path = os.path.join(cache_dir, args.repo_id)
         good_episodes_list = [k for k in good_episodes if good_episodes[k]]
         save_filtered_dataset(dataset_path, args.output, good_episodes_list)
