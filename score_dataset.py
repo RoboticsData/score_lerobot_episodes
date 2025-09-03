@@ -55,6 +55,7 @@ def main():
     ap.add_argument("--plot", required=False, type=bool, default=False)
     args = ap.parse_args()
 
+
     # Load dataset.
     dataset = load_dataset_hf(args.repo_id, root=args.root)
     task = dataset.meta.tasks
@@ -152,9 +153,9 @@ def main():
     #  --wandb.enable=true
     
     if args.train_baseline:
-        start_training(args.repo_id, root=args.root, job_name='baseline', output_dir='./checkpoints/baseline')
+        start_training(args.repo_id, root=args.root, job_name='baseline')
     if args.train_filtered:
-        start_training(args.repo_id, root=args.output, job_name='filtered', output_dir='./checkpoints/filtered')
+        start_training(args.repo_id, root=args.output, job_name='filtered')
 
     if args.plot:
         for k in crit_names:
