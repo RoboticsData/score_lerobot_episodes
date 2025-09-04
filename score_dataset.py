@@ -51,6 +51,8 @@ def main():
     ap.add_argument("--root", required=False, default=None, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--nominal", type=float)
+    ap.add_argument("--policy_name", type = str, default = "act")
+    ap.add_argument("--threshold", type = float, default = 0.5)
     ap.add_argument("--train-baseline", type=bool, default=False)
     ap.add_argument("--train-filtered", type=bool, default=False)
     ap.add_argument("--plot", required=False, type=bool, default=False)
@@ -125,12 +127,12 @@ def main():
                 cam,
                 *[subs[k] for k in crit_names],
                 total,
-                'GOOD' if total >= 0.5 else 'BAD'
+                'GOOD' if total >= args.threshold else 'BAD'
             )
         )
         if ep_idx not in good_episodes or good_episodes[ep_idx]:
             # Check both cameras, if at least one is false, we will set it to false
-            good_episodes[ep_idx] = (total >= 0.5)
+            good_episodes[ep_idx] = (total >= args.threshold)
 
     print(divider)
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
@@ -154,9 +156,9 @@ def main():
     #  --wandb.enable=true
     
     if args.train_baseline:
-        start_training(args.repo_id, root=args.root, job_name='baseline')
+        start_training(args.repo_id, root=args.root, policy_name = args.policy_name, job_name='baseline')
     if args.train_filtered:
-        start_training(args.repo_id, root=args.output, job_name='filtered')
+        start_training(args.repo_id, root=args.output,  policy_name = args.policy_name, job_name='filtered')
 
     if args.plot:
         for k in crit_names:
