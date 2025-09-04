@@ -136,6 +136,7 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
             os.makedirs(os.path.dirname(new_video_path), exist_ok=True)
             shutil.copy2(old_video_path, new_video_path)
             total_videos += 1
+    assert total_videos > 0, 'Total videos is 0'
 
     # Copy meta
     os.makedirs(os.path.join(output_path, 'meta'), exist_ok=True)
@@ -175,15 +176,17 @@ def save_filtered_dataset(input_path, output_path, good_episodes):
     # meta/info.json
     # - update total_episodes
     info['total_episodes'] = len(good_episodes)
+    assert info['total_episodes'] > 0, 'Total episodes is 0'
     # - update total_frames
     info['total_frames'] = sum([e['length'] for e in episodes_data])
+    assert info['total_frames'] > 0, 'Total frames is 0'
     # - update total_videos
     info['total_videos'] = total_videos
+    assert info['total_videos'] > 0, 'Total videos is 0'
     # - update splits
     info['splits'] = rebuild_splits(info['splits'], good_episodes)
     info_output_path = os.path.join(output_path, 'meta/info.json')
     json.dump(info, open(info_output_path, 'w'))
-
 
 def organize_by_episode(dataset):
     episode_map = {}
