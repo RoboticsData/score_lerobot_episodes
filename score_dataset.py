@@ -50,6 +50,7 @@ def main():
     ap.add_argument("--repo_id", required=True, type=str)
     ap.add_argument("--root", required=False, default=None, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
+    ap.add_argument("--overwrite", required=False, type=bool, default=True)
     ap.add_argument("--nominal", type=float)
     ap.add_argument("--policy_name", type = str, default = "act")
     ap.add_argument("--threshold", type = float, default = 0.5)
@@ -152,7 +153,7 @@ def main():
         if not dataset_path:
             cache_dir = cache_dir = HF_LEROBOT_HOME
             dataset_path = os.path.join(cache_dir, args.repo_id)
-        save_filtered_dataset(dataset_path, args.output, good_episodes_list)
+        save_filtered_dataset(dataset_path, args.output, good_episodes_list, overwrite=args.overwrite)
         ds = load_dataset_hf(args.repo_id, root=args.output)
 
     # Training config required args.
