@@ -89,9 +89,14 @@ def rewrite_episode_parquet(old_parquet_path, new_parquet_path, good_episodes, s
     return n  # rows written
 
 
-def save_filtered_dataset(input_path, output_path, good_episodes):
+def save_filtered_dataset(input_path, output_path, good_episodes, overwrite=True):
     if os.path.exists(input_path) and os.path.exists(output_path) and os.path.samefile(input_path, output_path):
         raise ValueError(f'Input and output path cannot be identical. Input path: {input_path} \nOutput path: {output_path}')
+    if not overwrite and os.path.exists(output_path):
+        raise FileExistsError(f'Directory {output_path} already exists and overwite is False')
+    elif os.path.exists(output_path):
+        print(f'Removing directory: {output_path}')
+        shutil.rmtree(output_path)
     good_episodes = sorted(list(set(good_episodes)))
     # Read meta/info.json
     info_path = os.path.join(input_path, 'meta/info.json')
