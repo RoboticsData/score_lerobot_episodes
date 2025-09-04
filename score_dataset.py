@@ -137,13 +137,21 @@ def main():
     print(divider)
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
+
     if args.output:
+        good_episodes_list = [k for k in good_episodes if good_episodes[k]]
+        if len(good_episodes_list) == 0:
+            raise ValueError(f'All episodes filtered out, decrease threshold to fix this. Current threshold: {args.threshold}')
+        total_episodes = len(episode_map)
+        num_removed = total_episodes - len(good_episodes_list)
+
+        print(f'Percentage of episodes removed: {float(num_removed)}/{total_episodes}, total: {num_removed}')
+        print('')
         # Need to find actual dataset path on disk.
         dataset_path = args.root
         if not dataset_path:
             cache_dir = cache_dir = HF_LEROBOT_HOME
             dataset_path = os.path.join(cache_dir, args.repo_id)
-        good_episodes_list = [k for k in good_episodes if good_episodes[k]]
         save_filtered_dataset(dataset_path, args.output, good_episodes_list)
         ds = load_dataset_hf(args.repo_id, root=args.output)
 
@@ -156,9 +164,11 @@ def main():
     #  --wandb.enable=true
     
     if args.train_baseline:
-        start_training(args.repo_id, root=args.root, policy_name = args.policy_name, job_name='baseline')
-    if args.train_filtered:
-        start_training(args.repo_id, root=args.output,  policy_name = args.policy_name, job_name='filtered')
+        start_training(args.repo_id, root=args.root, job_name='baseline')
+    if args.train_filtered and num_removed == 0:
+        print('WARNING: Not training because nothing was removed.')
+    elif args.train_filtered:
+        start_training(args.repo_id, root=args.output, job_name='filtered')
 
     if args.plot:
         for k in crit_names:
