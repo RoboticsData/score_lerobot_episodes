@@ -6,9 +6,10 @@ from lerobot.policies.factory import make_policy_config
 import os
 from pathlib import Path
 import wandb
+import shutil
 import torch
 
-def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_name='', **kwargs):
+def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_name='', overwrite_checkpoint=False, **kwargs):
     dataset = DatasetConfig(repo_id=repo_id, root=root)
     policy = make_policy_config(policy_name)
     policy.push_to_hub = False
@@ -22,6 +23,12 @@ def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_n
 
     if not output_dir:
         output_dir = f'./checkpoints/{full_job_name}'
+
+    #lerobot_train will give an error if resume is False in train_config and output_dir is non-empty  
+    if overwrite_checkpoint and os.path.exists(output_dir):
+        print(f'Removing directory: {output_dir}')
+        shutil.rmtree(output_dir)
+    
     
     output_dir = Path(output_dir)
     wandb_config = WandBConfig(enable=True)
