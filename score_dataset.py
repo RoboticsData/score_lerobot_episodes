@@ -51,7 +51,7 @@ def main():
     ap.add_argument("--root", required=False, default=None, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--overwrite", required=False, type=bool, default=True)
-    ap.add_argument("--overwrite_checkpoint", required=False, default=False)
+    ap.add_argument("--overwrite_checkpoint", required=False, type=bool, default=False)
     ap.add_argument("--nominal", type=float)
     ap.add_argument("--policy_name", type = str, default = "act")
     ap.add_argument("--threshold", type = float, default = 0.5)
