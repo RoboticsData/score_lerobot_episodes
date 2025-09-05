@@ -51,6 +51,7 @@ def main():
     ap.add_argument("--root", required=False, default=None, type=str)
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--overwrite", required=False, type=bool, default=True)
+    ap.add_argument("--overwrite_checkpoint", required=False, default=False)
     ap.add_argument("--nominal", type=float)
     ap.add_argument("--policy_name", type = str, default = "act")
     ap.add_argument("--threshold", type = float, default = 0.5)
@@ -165,11 +166,15 @@ def main():
     #  --wandb.enable=true
     
     if args.train_baseline:
-        start_training(args.repo_id, root=args.root, job_name='baseline')
+        if args.overwrite_checkpoints:
+            print('WARNING: overwrite_checkpoints is True')
+        start_training(args.repo_id, root=args.root, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
-        start_training(args.repo_id, root=args.output, job_name='filtered')
+        if args.overwrite_checkpoints:
+            print('WARNING: overwrite_checkpoints is True')
+        start_training(args.repo_id, root=args.output, job_name='filtered', overwrite_checkpoint=args.overwrite_checkpoint))
 
     if args.plot:
         for k in crit_names:
