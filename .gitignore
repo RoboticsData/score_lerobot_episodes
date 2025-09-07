@@ -13,3 +13,4 @@ __pycache__/*
 stats.*.pickle
 checkpoints/
 outputs/
+output/
