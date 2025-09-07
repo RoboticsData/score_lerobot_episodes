@@ -33,6 +33,7 @@ It combines classic Computer Vision heuristics (blur / exposure tests, kinematic
 pip install -r requirements.txt
 export GOOGLE_API_KEY="sk-..."      # Required only if you use VLM-based scoring
 ```
+Note: The free tier rate limits of the Gemini API, are fairly restrictive and might need to be upgraded depending on how long the episodes are. Check https://ai.google.dev/gemini-api/docs/rate-limits for more info.
 
 ## Example
 ```bash
