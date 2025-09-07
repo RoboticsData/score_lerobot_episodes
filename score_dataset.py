@@ -52,6 +52,7 @@ def main():
     ap.add_argument("--output", required=False, type=str, default=None)
     ap.add_argument("--overwrite", required=False, type=bool, default=True)
     ap.add_argument("--nominal", type=float)
+    ap.add_argument("--vision_type", required=False, choices=["opencv", "vlm_gemini"], default="opencv")
     ap.add_argument("--policy_name", type = str, default = "act")
     ap.add_argument("--threshold", type = float, default = 0.5)
     ap.add_argument("--train-baseline", type=bool, default=False)
@@ -72,7 +73,12 @@ def main():
     states = [episode_map[i]['states'] for i in episode_map]
     time_stats = build_time_stats(states)         # ← q1, q3, mean, std, …
 
-    scorer = DatasetScorer(None, time_stats=time_stats)#VLMInterface())
+    if args.vision_type == 'opencv':
+        vlm_interface = None
+    else:
+        vlm_interface = VLMInterface(args.vision_type)
+    scorer = DatasetScorer(vlm_inferface, time_stats=time_stats)
+
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
