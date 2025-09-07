@@ -11,3 +11,6 @@ __pycache__/*
 *.swp
 *.swo
 stats.*.pickle
+checkpoints/
+outputs/
+output/
