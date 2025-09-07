@@ -168,13 +168,13 @@ def main():
     if args.train_baseline:
         if args.overwrite_checkpoints:
             print('WARNING: overwrite_checkpoints is True')
-        start_training(args.repo_id, root=args.root, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
+        start_training(args.repo_id, root=args.root, policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
         if args.overwrite_checkpoints:
             print('WARNING: overwrite_checkpoints is True')
-        start_training(args.repo_id, root=args.output, job_name='filtered', overwrite_checkpoint=args.overwrite_checkpoint))
+        start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name='filtered', overwrite_checkpoint=args.overwrite_checkpoint))
 
     if args.plot:
         for k in crit_names:
