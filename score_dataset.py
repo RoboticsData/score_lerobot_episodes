@@ -78,7 +78,7 @@ def main():
         vlm_interface = None
     else:
         vlm_interface = VLMInterface(args.vision_type)
-    scorer = DatasetScorer(vlm_inferface, time_stats=time_stats)
+    scorer = DatasetScorer(vlm_interface, time_stats=time_stats)
 
     # ------------------------------------------------------------------
     #  Evaluate every episode
