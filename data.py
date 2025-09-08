@@ -10,6 +10,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 def update_info_json(info_file):
+    # This is required for OpenX datasets since
+    # they store the channel name as rgb instead of channels.
     data = json.load(open(info_file, 'r'))
     for key in data['features']:
         if data['features'][key]['dtype'] != 'video':
