@@ -176,7 +176,8 @@ def main():
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
-        start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name='filtered', overwrite_checkpoint=args.overwrite_checkpoint))
+        filtered_job_name = f'filtered_{args.threshold}'
+        start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint))
 
     if args.plot:
         for k in crit_names:
