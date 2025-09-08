@@ -17,13 +17,12 @@ def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     dataset = LeRobotDataset(
         repo_id,
         root=root,
-        #episodes=episodes,
+        episodes=episodes,
         #delta_timestamps=delta_timestamps,
         #image_transforms=image_transforms,
         #revision=revision,
         #video_backend=cfg.dataset.video_backend,
     )
-    camera_keys = ds_meta.camera_keys
     return dataset
 
 def load_jsonl(path):
