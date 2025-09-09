@@ -40,6 +40,7 @@ def run_eval(policy_path, repo_id, wandb_id, episodes, use_amp=False, root=None)
     )
 
     policy_config = PreTrainedConfig.from_pretrained(policy_path)
+    policy_config.pretrained_path = policy_path
     policy = make_policy(policy_config, dataset.meta)
     if hasattr(policy.config, 'use_vae'):
         # Special case for ACT.
