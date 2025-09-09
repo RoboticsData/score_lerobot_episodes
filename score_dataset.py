@@ -6,6 +6,7 @@ from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
 from scores import build_time_stats           # (your helper from the other file)
 from train import start_training
+from evaluation import get_eval_episodes, run_eval
 import hashlib
 import pickle
 import os
@@ -153,8 +154,9 @@ def main():
         total_episodes = len(episode_map)
         num_removed = total_episodes - len(good_episodes_list)
 
-        print(f'Percentage of episodes removed: {float(num_removed)}/{total_episodes}, total: {num_removed}')
+        print(f'Percentage of episodes removed: {float(num_removed)/total_episodes}, total: {num_removed}')
         print('')
+
         # Need to find actual dataset path on disk.
         dataset_path = args.root
         if not dataset_path:
@@ -171,13 +173,17 @@ def main():
     #  --device=cuda \
     #  --wandb.enable=true
     
+    baseline_eval_episodes, filtered_eval_episodes = get_eval_episodes(good_episodes_list)
+
     if args.train_baseline:
-        start_training(args.repo_id, root=args.root, policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
+        output_dir, wandb_id = start_training(args.repo_id, root=args.root, policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
+        run_eval(output_dir, args.repo_id, wandb_id, baseline_eval_episodes, root=args.root)
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
         filtered_job_name = f'filtered_{args.threshold}'
-        start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint))
+        output_dir, wandb_id = start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
+        run_eval(output_dir, args.repo_id, wandb_id, filtered_eval_episodes, root=args.root)
 
     if args.plot:
         for k in crit_names:

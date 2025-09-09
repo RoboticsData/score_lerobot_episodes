@@ -21,7 +21,6 @@ def update_info_json(info_file):
         names = ['channels' if x == 'rgb' else x for x in names]
         data['features'][key]['names'] = names
     json.dump(data, open(info_file, 'w'), indent=4)
-    return dataset
 
 def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     ds_meta = LeRobotDatasetMetadata(
@@ -31,13 +30,12 @@ def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     dataset = LeRobotDataset(
         repo_id,
         root=root,
-        #episodes=episodes,
+        episodes=episodes,
         #delta_timestamps=delta_timestamps,
         #image_transforms=image_transforms,
         #revision=revision,
         #video_backend=cfg.dataset.video_backend,
     )
-    camera_keys = ds_meta.camera_keys
 
     # Check and update info.json
     info_file = os.path.join(dataset.root, 'meta/info.json')
