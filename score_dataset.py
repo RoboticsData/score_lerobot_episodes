@@ -173,15 +173,17 @@ def main():
     #  --device=cuda \
     #  --wandb.enable=true
     
+    baseline_eval_episodes, filtered_eval_episodes = get_eval_episodes(good_episodes_list)
+
     if args.train_baseline:
         output_dir, wandb_id = start_training(args.repo_id, root=args.root, policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
-        run_eval(output_dir, args.repo_id, wandb_id, good_episodes_list, root=args.root)
+        run_eval(output_dir, args.repo_id, wandb_id, baseline_eval_episodes, root=args.root)
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
         filtered_job_name = f'filtered_{args.threshold}'
         output_dir, wandb_id = start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
-        run_eval(output_dir, args.repo_id, wandb_id, good_episodes_list, root=args.root)
+        run_eval(output_dir, args.repo_id, wandb_id, filtered_eval_episodes, root=args.root)
 
     if args.plot:
         for k in crit_names:
