@@ -32,7 +32,7 @@ def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_n
     
     output_dir = Path(output_dir)
     wandb_config = WandBConfig(enable=True)
-    
+
     train_config = TrainPipelineConfig(
         dataset=dataset,
         policy=policy,
@@ -50,7 +50,8 @@ def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_n
     wandb_id = wandb.run.id if wandb.run else None
 
     wandb.finish()
-    return output_dir, wandb_id
+    pretrained_checkpoint_path = output_dir / 'checkpoints' / 'last' / 'pretrained_model'
+    return pretrained_checkpoint_path, wandb_id
 
 if __name__ == '__main__':
     repo_id = 'sammyatman/open-book'
