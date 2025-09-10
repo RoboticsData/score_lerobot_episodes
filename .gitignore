@@ -11,16 +11,4 @@ __pycache__/*
 *.swp
 *.swo
 stats.*.pickle
-
-# IDE/editor-specific folders
-.vscode/
-
-# Local utility scripts
-bad_episodes.py
-
-# Local test/example directories
-bad_example/
-
-# Generated output directories
-output/
-results/
+checkpoints/
