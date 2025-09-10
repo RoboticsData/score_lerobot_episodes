@@ -43,12 +43,15 @@ def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_n
         steps=10000,
         log_freq=200,
         eval_freq=200,
-        #eval_holdout_split="0:5",
         #resume=True,
         num_workers=4)
 
     lerobot_train.train(train_config)
+    wandb_id = wandb.run.id if wandb.run else None
+
     wandb.finish()
+    pretrained_checkpoint_path = output_dir / 'checkpoints' / 'last' / 'pretrained_model'
+    return pretrained_checkpoint_path, wandb_id
 
 if __name__ == '__main__':
     repo_id = 'sammyatman/open-book'

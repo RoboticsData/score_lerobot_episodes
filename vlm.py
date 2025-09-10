@@ -1,6 +1,7 @@
 import pathlib, base64, cv2, numpy as np, google.generativeai as genai
 from pydantic import BaseModel, Field
 import json
+import time
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -11,7 +12,11 @@ class ScoreOutput(BaseModel):
 class VLMInterface:
     # pick whichever model tier your quota allows
     #_MODEL = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
-    _MODEL = genai.GenerativeModel("gemini-2.0-flash")
+    _MODEL = genai.GenerativeModel("gemini-2.0-flash-lite")
+
+    def __init__(self, vlm_type):
+        # TODO: Support other vlm types, only gemini is supported now
+        self.vlm_type = vlm_type
 
     @staticmethod
     def _load_mp4_bytes(path: str) -> bytes:
@@ -46,6 +51,10 @@ class VLMInterface:
             },
         )
         j = json.loads(response.text)#candidates[0].content.text)
+
+        # Sleep to prevent rate limits.
+        # Max 30 RPM.
+        time.sleep(0.5)
         return j["score"]
     
     def negative_visual_quality(self, frame: np.ndarray) -> float:
@@ -75,6 +84,9 @@ class VLMInterface:
             },
         )
         j = json.loads(response.text)
+        # Sleep to prevent rate limits.
+        # Max 30 RPM.
+        time.sleep(0.5)
         return float(j["score"])
 
 

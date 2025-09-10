@@ -9,6 +9,19 @@ import shutil
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+def update_info_json(info_file):
+    # This is required for OpenX datasets since
+    # they store the channel name as rgb instead of channels.
+    # TODO: Remove this later and fix dataset.
+    data = json.load(open(info_file, 'r'))
+    for key in data['features']:
+        if data['features'][key]['dtype'] != 'video':
+            continue
+        names = data['features'][key]['names']
+        names = ['channels' if x == 'rgb' else x for x in names]
+        data['features'][key]['names'] = names
+    json.dump(data, open(info_file, 'w'), indent=4)
+
 def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     ds_meta = LeRobotDatasetMetadata(
         repo_id, root=root, revision=revision, force_cache_sync=False
@@ -17,13 +30,16 @@ def load_dataset_hf(repo_id, episodes=None, root=None, revision=None):
     dataset = LeRobotDataset(
         repo_id,
         root=root,
-        #episodes=episodes,
+        episodes=episodes,
         #delta_timestamps=delta_timestamps,
         #image_transforms=image_transforms,
         #revision=revision,
         #video_backend=cfg.dataset.video_backend,
     )
-    camera_keys = ds_meta.camera_keys
+
+    # Check and update info.json
+    info_file = os.path.join(dataset.root, 'meta/info.json')
+    update_info_json(info_file)
     return dataset
 
 def load_jsonl(path):
