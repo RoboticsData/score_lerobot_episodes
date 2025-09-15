@@ -103,7 +103,7 @@ def main():
             "video_path": vid_path,
             "aggregate_score": total,
             "per_attribute_scores": subs
-        })
+            })
             episode_total += total
         agg_mean += episode_total / len(episode['vid_paths'])
     agg_mean /= len(rows)
