@@ -98,8 +98,8 @@ def main():
             rows.append((episode_index, camera_type, vid_path, total, subs))
             #Append the raw data into a list of dictionaries for later JSON output.
             output_data.append({
-            "episode_id": ep_idx,
-            "camera_type": cam,
+            "episode_id": episode_index,
+            "camera_type": camera_type,
             "video_path": vid_path,
             "aggregate_score": total,
             "per_attribute_scores": subs
