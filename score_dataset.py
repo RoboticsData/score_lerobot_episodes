@@ -86,6 +86,7 @@ def main():
     #  Evaluate every episode
     # ------------------------------------------------------------------
     rows, agg_mean = [], 0.0
+    output_data = []
 
     for episode_index in episode_map:
         episode = episode_map[episode_index]
@@ -95,20 +96,18 @@ def main():
             states = episode['states']
             total, subs = scorer.score(vid_path, states, task, args.nominal)
             rows.append((episode_index, camera_type, vid_path, total, subs))
-            episode_total += total
-        agg_mean += episode_total / len(episode['vid_paths'])
-    agg_mean /= len(rows)
-
-    # Convert the raw data into a list of dictionaries for JSON output.
-    output_data = []
-    for ep_idx, cam, vid_path, total, subs in rows:
-        output_data.append({
+            #Append the raw data into a list of dictionaries for later JSON output.
+            output_data.append({
             "episode_id": ep_idx,
             "camera_type": cam,
             "video_path": vid_path,
             "aggregate_score": total,
             "per_attribute_scores": subs
         })
+            episode_total += total
+        agg_mean += episode_total / len(episode['vid_paths'])
+    agg_mean /= len(rows)
+        
 
     # Create the results directory if it doesn't exist.
     results_dir = "results"
