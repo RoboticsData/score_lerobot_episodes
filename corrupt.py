@@ -45,8 +45,8 @@ def corrupt_video(input_path: str, output_path: str, corruption_prob: float):
 
     # Don't corrupt this video with 1-p
     if random.random() >= corruption_prob:
-        return
-    
+        return False
+
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         raise ValueError(f"Could not open video: {input_path}")
@@ -77,34 +77,54 @@ def corrupt_video(input_path: str, output_path: str, corruption_prob: float):
     cap.release()
     out.release()
     print(f"Corrupted video saved: {output_path} ({frame_count}/{total_frames} frames processed)")
+    return True
 
 
 def corrupt_motion_data(states: List[Dict], actions: List[np.ndarray], corruption_prob: float) -> tuple:
     """Add noise to motion data (states and actions)."""
     corrupted_states = []
     corrupted_actions = []
-    
+
+    # First decide if this episode should be corrupted at all
+    if random.random() >= corruption_prob:
+        # No corruption for this episode
+        for state_dict, action in zip(states, actions):
+            corrupted_states.append(state_dict.copy())
+            corrupted_actions.append(action.clone())
+        return corrupted_states, corrupted_actions, False, False
+
+    # Episode is selected for corruption - determine corruption amount
+    # Base corruption: 20% of timesteps, with random variation up to 80%
+    base_corruption_rate = 0.2
+    max_additional_corruption = 0.6
+    timestep_corruption_rate = base_corruption_rate + random.random() * max_additional_corruption
+
+    state_corrupted = False
+    action_corrupted = False
+
     for i, (state_dict, action) in enumerate(zip(states, actions)):
         corrupted_state = state_dict.copy()
         corrupted_action = action.clone()
-        
-        # Corrupt state data
-        if random.random() < corruption_prob:
+
+        # Corrupt state data based on timestep corruption rate
+        if random.random() < timestep_corruption_rate:
             state_array = state_dict["q"]
             noise_scale = 0.05  # 5% noise
             noise = np.random.normal(0, noise_scale, state_array.shape)
             corrupted_state["q"] = state_array + noise
-        
-        # Corrupt action data
-        if random.random() < corruption_prob:
+            state_corrupted = True
+
+        # Corrupt action data based on timestep corruption rate
+        if random.random() < timestep_corruption_rate:
             noise_scale = 0.03  # 3% noise for actions
             noise = np.random.normal(0, noise_scale, action.shape)
             corrupted_action = action + noise
-        
+            action_corrupted = True
+
         corrupted_states.append(corrupted_state)
         corrupted_actions.append(corrupted_action)
-    
-    return corrupted_states, corrupted_actions
+
+    return corrupted_states, corrupted_actions, state_corrupted, action_corrupted
 
 
 def update_parquet_with_corrupted_data(parquet_path: str, corrupted_states: List[Dict], corrupted_actions: List[np.ndarray]):
@@ -119,9 +139,27 @@ def update_parquet_with_corrupted_data(parquet_path: str, corrupted_states: List
     # Update state and action columns
     for i, (state_dict, action) in enumerate(zip(corrupted_states, corrupted_actions)):
         if i < len(data_dict.get("observation.state", [])):
-            data_dict["observation.state"][i] = state_dict["q"]
+            # Convert to numpy array if it's a tensor
+            state_q = state_dict["q"]
+            if hasattr(state_q, 'numpy'):
+                state_q = state_q.numpy()
+            elif hasattr(state_q, 'detach'):
+                state_q = state_q.detach().numpy()
+            # Ensure consistent float32 dtype
+            if isinstance(state_q, np.ndarray):
+                state_q = state_q.astype(np.float32)
+            data_dict["observation.state"][i] = state_q
         if i < len(data_dict.get("action", [])):
-            data_dict["action"][i] = action
+            # Convert to numpy array if it's a tensor
+            action_data = action
+            if hasattr(action_data, 'numpy'):
+                action_data = action_data.numpy()
+            elif hasattr(action_data, 'detach'):
+                action_data = action_data.detach().numpy()
+            # Ensure consistent float32 dtype
+            if isinstance(action_data, np.ndarray):
+                action_data = action_data.astype(np.float32)
+            data_dict["action"][i] = action_data
     
     # Create new table with corrupted data
     new_table = pa.table(data_dict)
@@ -130,40 +168,75 @@ def update_parquet_with_corrupted_data(parquet_path: str, corrupted_states: List
 
 def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, overwrite: bool = True, root=None):
     """Corrupt an entire dataset by applying corruption to videos and motion data."""
-    
+
     if os.path.exists(output_path):
         if overwrite:
             print(f'Removing existing directory: {output_path}')
             shutil.rmtree(output_path)
         else:
             raise FileExistsError(f'Directory {output_path} already exists and overwrite is False')
-    
-    # Copy entire dataset structure first        
+
+    # Copy entire dataset structure first
     dataset = load_dataset_hf(repo_id, root=root)
     print("Copying dataset structure...")
     shutil.copytree(dataset.root, output_path)
     episode_map = organize_by_episode(dataset)
-        
+
+    # Track corruption information
+    corruption_log = {
+        "corruption_probability": corruption_prob,
+        "corrupted_episodes": {},
+        "total_episodes": len(episode_map),
+        "corruption_types": {
+            "video_corruption_strength": 0.7,
+            "state_noise_scale": 0.05,
+            "action_noise_scale": 0.03,
+            "timestep_corruption": {
+                "base_rate": 0.2,
+                "max_additional": 0.6,
+                "description": "For corrupted episodes, 20-80% of timesteps are corrupted"
+            }
+        }
+    }
+
     # Corrupt videos
     print(f"Corrupting videos with {corruption_prob}% corruption proportion...")
     video_dir = os.path.join(output_path, 'videos')
     if os.path.exists(video_dir):
-        for root, dirs, files in os.walk(video_dir):
+        for root_dir, dirs, files in os.walk(video_dir):
             for file in files:
                 if file.endswith('.mp4'):
-                    video_path = os.path.join(root, file)
+                    video_path = os.path.join(root_dir, file)
                     print(f"Processing video: {video_path}")
-                    corrupt_video(video_path, video_path, corruption_prob)
-    
+
+                    # Extract episode index from video path
+                    episode_idx = None
+                    if 'episode_' in file:
+                        try:
+                            episode_idx = int(file.split('episode_')[1].split('_')[0])
+                        except (IndexError, ValueError):
+                            pass
+
+                    video_corrupted = corrupt_video(video_path, video_path, corruption_prob)
+
+                    if episode_idx is not None:
+                        if episode_idx not in corruption_log["corrupted_episodes"]:
+                            corruption_log["corrupted_episodes"][episode_idx] = {
+                                "video_corrupted": False,
+                                "state_corrupted": False,
+                                "action_corrupted": False
+                            }
+                        corruption_log["corrupted_episodes"][episode_idx]["video_corrupted"] = video_corrupted
+
     # Corrupt motion data in parquet files
     print(f"Corrupting motion data with {corruption_prob}% corruption proportion...")
     data_dir = os.path.join(output_path, 'data')
     if os.path.exists(data_dir):
-        for root, dirs, files in os.walk(data_dir):
+        for root_dir, dirs, files in os.walk(data_dir):
             for file in files:
                 if file.endswith('.parquet'):
-                    parquet_path = os.path.join(root, file)
-                    
+                    parquet_path = os.path.join(root_dir, file)
+
                     # Extract episode index from filename
                     episode_idx = None
                     if 'episode_' in file:
@@ -171,24 +244,53 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
                             episode_idx = int(file.split('episode_')[1].split('.')[0])
                         except (IndexError, ValueError):
                             pass
-                    
+
                     # Get episode data if available
                     if episode_idx is not None and episode_idx in episode_map:
                         episode = episode_map[episode_idx]
                         states = episode.get('states', [])
                         actions = episode.get('actions', [])
-                        
+
                         if states and actions:
                             print(f"Corrupting motion data for episode {episode_idx}")
-                            corrupted_states, corrupted_actions = corrupt_motion_data(
+                            corrupted_states, corrupted_actions, state_corrupted, action_corrupted = corrupt_motion_data(
                                 states, actions, corruption_prob
                             )
                             update_parquet_with_corrupted_data(
                                 parquet_path, corrupted_states, corrupted_actions
                             )
+
+                            # Track corruption
+                            if episode_idx not in corruption_log["corrupted_episodes"]:
+                                corruption_log["corrupted_episodes"][episode_idx] = {
+                                    "video_corrupted": False,
+                                    "state_corrupted": False,
+                                    "action_corrupted": False
+                                }
+                            corruption_log["corrupted_episodes"][episode_idx]["state_corrupted"] = state_corrupted
+                            corruption_log["corrupted_episodes"][episode_idx]["action_corrupted"] = action_corrupted
                     else:
                         print(f"Skipping motion corruption for {parquet_path} (no episode data)")
-    
+
+    # Save corruption log
+    corruption_log_path = os.path.join(output_path, "corruption_log.json")
+    with open(corruption_log_path, 'w') as f:
+        json.dump(corruption_log, f, indent=2)
+
+    # Print summary
+    total_corrupted = len(corruption_log["corrupted_episodes"])
+    video_corrupted = sum(1 for ep in corruption_log["corrupted_episodes"].values() if ep["video_corrupted"])
+    state_corrupted = sum(1 for ep in corruption_log["corrupted_episodes"].values() if ep["state_corrupted"])
+    action_corrupted = sum(1 for ep in corruption_log["corrupted_episodes"].values() if ep["action_corrupted"])
+
+    print(f"\nCorruption Summary:")
+    print(f"  Total episodes processed: {corruption_log['total_episodes']}")
+    print(f"  Episodes with any corruption: {total_corrupted}")
+    print(f"  Episodes with video corruption: {video_corrupted}")
+    print(f"  Episodes with state corruption: {state_corrupted}")
+    print(f"  Episodes with action corruption: {action_corrupted}")
+    print(f"  Corruption log saved to: {corruption_log_path}")
+
     print(f"Dataset corruption complete. Corrupted dataset saved to: {output_path}")
 
 
@@ -198,8 +300,8 @@ def main():
     parser.add_argument("--root", default=None, help="Root directory of the dataset")
     parser.add_argument("--corruption_prob", type=float, default=0.2, 
                        help="Proportion of episodes to corrupt (0-1)")
-    parser.add_argument("--output_path", default=None, 
-                       help="Custom suffix for output directory (default: _corrupted_X%)")
+    parser.add_argument("--output_path", default=None,
+                       help="Custom suffix for output directory (default: _corrupted_X%%)")
     parser.add_argument("--overwrite", action="store_true", default=False,
                        help="Overwrite output directory if it exists")
     
