@@ -210,7 +210,7 @@ def main():
     elif args.train_filtered:
         filtered_job_name = f'filtered_{args.threshold}'
         pretrained_model_path, wandb_id = start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
-        run_eval(pretrained_model_path, args.repo_id, wandb_id, filtered_eval_episodes, root=args.root)
+        run_eval(pretrained_model_path, args.repo_id, wandb_id, filtered_eval_episodes, root=args.output)
 
     if args.plot:
         for k in crit_names:
