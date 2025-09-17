@@ -22,7 +22,9 @@ def start_training(repo_id, root=None, output_dir=None, policy_name='act', job_n
     full_job_name = f"{job_name or 'train'}_{policy_name}_{dataset_name}"
 
     if not output_dir:
-        output_dir = f'./checkpoints/{full_job_name}'
+        output_dir = f'./checkpoints'
+
+    output_dir = os.path.join(f'{output_dir}/{full_job_name}')
 
     #lerobot_train will give an error if resume is False in train_config and output_dir is non-empty  
     if overwrite_checkpoint and os.path.exists(output_dir):
