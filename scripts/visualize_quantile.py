@@ -3,12 +3,6 @@ import pandas as pd
 import json
 from moviepy import VideoFileClip
 
-#from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
-#from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
-#from scores import build_time_stats           # (your helper from the other file)
-#from score_dataset import DatasetScorer
-#from data import load_dataset_hf, organize_by_episode
-
 from lerobot.constants import HF_LEROBOT_HOME
 
 def get_pandas_df(results_path):
@@ -97,7 +91,7 @@ def main():
     
     #get quantiles:
     df, quantiles = get_quantiles(results_path, num_quantiles = args.quantiles)
-    #print(df.head())
+
     for i, edge in enumerate(quantiles):
         print(f"Quantile {i} cutoff: {edge}")
     
