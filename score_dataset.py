@@ -186,7 +186,7 @@ def main():
         # Need to find actual dataset path on disk.
         dataset_path = args.root
         if not dataset_path:
-            cache_dir = cache_dir = HF_LEROBOT_HOME
+            cache_dir = HF_LEROBOT_HOME
             dataset_path = os.path.join(cache_dir, args.repo_id)
         save_filtered_dataset(dataset_path, args.output, good_episodes_list, overwrite=args.overwrite)
         ds = load_dataset_hf(args.repo_id, root=args.output)
@@ -207,9 +207,11 @@ def main():
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
     elif args.train_filtered:
+        # We need to do this manually because the args.repo_id may not always match the supplied args.output
         filtered_job_name = f'filtered_{args.threshold}'
-        pretrained_model_path, wandb_id = start_training(args.repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
-        run_eval(pretrained_model_path, args.repo_id, wandb_id, filtered_eval_episodes, root=args.root)
+        filtered_repo_id = '/'.join(args.output.split('/')[-2:])
+        pretrained_model_path, wandb_id = start_training(filtered_repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
+        run_eval(pretrained_model_path, filtered_repo_id, wandb_id, filtered_eval_episodes, root=args.output)
 
     if args.plot:
         for k in crit_names:

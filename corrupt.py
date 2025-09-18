@@ -40,45 +40,55 @@ def corrupt_video_frame(frame: np.ndarray, corruption_strength: float = 0.5) -> 
     return corrupted_frame
 
 
-def corrupt_video(input_path: str, output_path: str, corruption_prob: float):
-    """Corrupt an entire video file."""
-
-    # Don't corrupt this video with 1-p
+def corrupt_video(input_path: str, output_path: str, corruption_prob: float) -> bool:
+    """
+    Corrupt an entire video file, writing to a DIFFERENT output path.
+    Returns True if corruption was applied and output written, False otherwise.
+    """
+    # Don't corrupt this video with (1 - p)
     if random.random() >= corruption_prob:
         return False
+
+    # Must not write to the same file we're reading
+    if os.path.abspath(input_path) == os.path.abspath(output_path):
+        raise ValueError("output_path must be different from input_path")
 
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         raise ValueError(f"Could not open video: {input_path}")
-    
+
     # Get video properties
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if not fps or fps <= 0:
+        fps = 30.0  # fallback
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    
+
     # Setup video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
+    out = cv2.VideoWriter(output_path, fourcc, float(fps), (width, height))
+    if not out.isOpened():
+        cap.release()
+        raise ValueError(f"Could not open VideoWriter for: {output_path}")
+
     frame_count = 0
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or -1
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        
-        # Corrupt current frame
+
+        # Optionally enable visual corruption:
         frame = corrupt_video_frame(frame, corruption_strength=0.7)
-        
+
         out.write(frame)
         frame_count += 1
-    
+
     cap.release()
     out.release()
     print(f"Corrupted video saved: {output_path} ({frame_count}/{total_frames} frames processed)")
     return True
-
 
 def corrupt_motion_data(states: List[Dict], actions: List[np.ndarray], corruption_prob: float) -> tuple:
     """Add noise to motion data (states and actions)."""
@@ -217,7 +227,25 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
                         except (IndexError, ValueError):
                             pass
 
-                    video_corrupted = corrupt_video(video_path, video_path, corruption_prob)
+                    # Write to a temp path first, then atomically replace on success
+                    tmp_out = f"{video_path}.tmp_corrupted.mp4"
+                    video_corrupted = False
+                    try:
+                        video_corrupted = corrupt_video(video_path, tmp_out, corruption_prob)
+                        if video_corrupted:
+                            os.replace(tmp_out, video_path)  # atomic on same filesystem
+                        else:
+                            # No corruption applied: ensure temp is removed if created
+                            if os.path.exists(tmp_out):
+                                os.remove(tmp_out)
+                    finally:
+                        # Extra cleanup in case of exceptions
+                        if os.path.exists(tmp_out) and not video_corrupted:
+                            try:
+                                os.remove(tmp_out)
+                            except OSError as e:
+                                print(e)
+                                pass
 
                     if episode_idx is not None:
                         if episode_idx not in corruption_log["corrupted_episodes"]:
@@ -298,7 +326,7 @@ def main():
     parser = argparse.ArgumentParser(description="Corrupt HuggingFace LeRobot dataset with video and motion corruption")
     parser.add_argument("--repo_id", required=True, help="Repository ID of the dataset")
     parser.add_argument("--root", default=None, help="Root directory of the dataset")
-    parser.add_argument("--corruption_prob", type=float, default=0.2, 
+    parser.add_argument("--corruption_prob", type=float, default=0.5, 
                        help="Proportion of episodes to corrupt (0-1)")
     parser.add_argument("--output_path", default=None,
                        help="Custom suffix for output directory (default: _corrupted_X%%)")

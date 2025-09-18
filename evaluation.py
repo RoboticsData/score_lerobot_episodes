@@ -28,7 +28,7 @@ def move_to_device(data, device):
 
 def run_eval(policy_path, repo_id, wandb_id, episodes, use_amp=False, root=None):
     wandb.init(project="lerobot", id=wandb_id, resume="must")
-    dataset = load_dataset_hf(repo_id, episodes=episodes)
+    dataset = load_dataset_hf(repo_id, root=root, episodes=episodes)
     loader = DataLoader(
         dataset,
         batch_size=1,
