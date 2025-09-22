@@ -21,7 +21,7 @@ def get_pandas_df(results_path):
     df_expanded = pd.concat([df.drop(columns= ["per_attribute_scores"]), df["per_attribute_scores"].apply(pd.Series)], axis = 1)
     return df_expanded
 
-def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggregate_score", csv = False):
+def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggregate_score"):
     df = get_pandas_df(results_path)
 
     # mean score per episode
@@ -50,8 +50,6 @@ def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggreg
         )
     else:
         df_with_quantiles = episode_scores
-    if csv:
-        df_with_quantiles.to_csv("results3.csv")
 
     return df_with_quantiles, bin_edges
 
