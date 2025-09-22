@@ -132,7 +132,7 @@ def main():
     else:
         save_dir = "saved_examples"
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"{repo_name}_examples")
+        save_path = os.path.join(save_dir, f"{repo_name}_{args.type}_examples")
         os.makedirs(save_path, exist_ok=True)
     
     #sample episodes from the picked quantile
