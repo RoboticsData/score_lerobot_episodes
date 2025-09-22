@@ -119,7 +119,7 @@ def main():
     print(f"Using results file: {results_path}")
     
     #get quantiles:
-    df, quantiles = get_quantiles(results_path, num_quantiles = args.quantiles, col = args.type, csv = args.csv)
+    df, quantiles = get_quantiles(results_path, num_quantiles = args.quantiles, col = args.type)
 
     if args.csv:
         csv_path = f'{repo_name}_quantiles.csv'
