@@ -37,7 +37,8 @@ def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggreg
         episode_scores["mean_score"],
         q=num_quantiles,
         labels=False,
-        retbins=True
+        retbins=True,
+        duplicates="drop"
     )
     episode_scores["quantile"] = quantiles
 
@@ -53,11 +54,15 @@ def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggreg
     return df_with_quantiles, bin_edges
 
 
-def visualize_quantile(df, quantile_pick=0, n_samples=3, save_path = None):
+def visualize_quantile(df, quantile_pick=0, n_samples=3, save_path = None, sampling_method = 'random'):
     lowest = df[df["quantile"] == quantile_pick]
     
     # pick unique episodes
-    sampled_eps = lowest["episode_id"].sample(n=n_samples, random_state=42)
+    if sampling_method == 'random':
+        sampled_eps = lowest["episode_id"].sample(n=n_samples, random_state=42)
+    else: #sampling_method == 'lowest'
+        unique_episodes = sorted(lowest["episode_id"].unique())
+        sampled_eps = unique_episodes[:n_samples]
 
     for ep in sampled_eps:
         episode_rows = lowest[lowest["episode_id"] == ep]
@@ -98,7 +103,8 @@ def main():
     ap.add_argument("--quantile_pick", type = int, default = 0)
     ap.add_argument("--num_samples", type = int, default = 3)
     ap.add_argument("--type", required=False, choices=["aggregate_score", "visual_clarity", "smoothness", "collision"], default="aggregate_score")
-    ap.add_argument("--csv", type=bool, default=False)
+    ap.add_argument("--sampling", required=False, choices=["random", "lowest"], default="random")
+    ap.add_argument("--csv", type=bool, default=True)
     args = ap.parse_args()
 
     #set repo_name
@@ -132,11 +138,11 @@ def main():
     else:
         save_dir = "saved_examples"
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"{repo_name}_{args.type}_examples")
+        save_path = os.path.join(save_dir, f"{repo_name}_{args.type}")
         os.makedirs(save_path, exist_ok=True)
     
     #sample episodes from the picked quantile
-    visualize_quantile(df, quantile_pick=args.quantile_pick, n_samples=args.num_samples, save_path = save_path)
+    visualize_quantile(df, quantile_pick=args.quantile_pick, n_samples=args.num_samples, save_path = save_path, sampling_method= args.sampling)
 
 
 if __name__ == "__main__":
