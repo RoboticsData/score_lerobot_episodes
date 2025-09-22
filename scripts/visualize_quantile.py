@@ -31,7 +31,6 @@ def get_quantiles(results_path, num_quantiles=4, keep_camera=True, col = "aggreg
         .reset_index()
     )
     episode_scores.rename(columns={col: "mean_score"}, inplace=True)
-    episode_scores.to_csv("results2.csv")
 
     # assign quantiles
     quantiles, bin_edges = pd.qcut(
