@@ -103,7 +103,7 @@ def main():
     ap.add_argument("--quantile_pick", type = int, default = 0)
     ap.add_argument("--num_samples", type = int, default = 3)
     ap.add_argument("--type", required=False, choices=["aggregate_score", "visual_clarity", "smoothness", "collision"], default="aggregate_score")
-    ap.add_argument("--sampling", required=False, choices=["random", "lowest"], default="random")
+    ap.add_argument("--sampling", required=False, choices=["random", "lowest"], default="lowest")
     ap.add_argument("--csv", type=bool, default=True)
     args = ap.parse_args()
 
