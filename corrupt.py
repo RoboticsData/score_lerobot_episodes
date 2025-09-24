@@ -326,7 +326,7 @@ def main():
     parser = argparse.ArgumentParser(description="Corrupt HuggingFace LeRobot dataset with video and motion corruption")
     parser.add_argument("--repo_id", required=True, help="Repository ID of the dataset")
     parser.add_argument("--root", default=None, help="Root directory of the dataset")
-    parser.add_argument("--corruption_prob", type=float, default=0.5, 
+    parser.add_argument("--corruption_prob", type=float, default=0.2, 
                        help="Proportion of episodes to corrupt (0-1)")
     parser.add_argument("--output_path", default=None,
                        help="Custom suffix for output directory (default: _corrupted_X%%)")

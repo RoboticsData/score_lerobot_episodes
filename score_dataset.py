@@ -58,8 +58,8 @@ def main():
     ap.add_argument("--vision_type", required=False, choices=["opencv", "vlm_gemini"], default="opencv")
     ap.add_argument("--policy_name", type = str, default = "act")
     ap.add_argument("--threshold", type = float, default = 0.5)
-    ap.add_argument("--train-baseline", type=bool, default=False)
-    ap.add_argument("--train-filtered", type=bool, default=False)
+    ap.add_argument("--train_baseline", type=bool, default=False)
+    ap.add_argument("--train_filtered", type=bool, default=False)
     ap.add_argument("--plot", required=False, type=bool, default=False)
     args = ap.parse_args()
 
@@ -174,8 +174,8 @@ def main():
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
 
+    good_episodes_list = [k for k in good_episodes if good_episodes[k]]
     if args.output:
-        good_episodes_list = [k for k in good_episodes if good_episodes[k]]
         if len(good_episodes_list) == 0:
             raise ValueError(f'All episodes filtered out, decrease threshold to fix this. Current threshold: {args.threshold}')
         total_episodes = len(episode_map)
@@ -203,7 +203,7 @@ def main():
     baseline_eval_episodes, filtered_eval_episodes = get_eval_episodes(good_episodes_list)
 
     if args.train_baseline:
-        pretrained_model_path, wandb_id = start_training(args.repo_id, root=args.root, policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
+        pretrained_model_path, wandb_id = start_training(args.repo_id, root=args.root, output_dir='/mnt/local/checkpoints', policy_name=args.policy_name, job_name='baseline', overwrite_checkpoint=args.overwrite_checkpoint)
         run_eval(pretrained_model_path, args.repo_id, wandb_id, baseline_eval_episodes, root=args.root)
     if args.train_filtered and num_removed == 0:
         print('WARNING: Not training because nothing was removed.')
@@ -211,7 +211,7 @@ def main():
         # We need to do this manually because the args.repo_id may not always match the supplied args.output
         filtered_job_name = f'filtered_{args.threshold}'
         filtered_repo_id = '/'.join(args.output.split('/')[-2:])
-        pretrained_model_path, wandb_id = start_training(filtered_repo_id, root=args.output, policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
+        pretrained_model_path, wandb_id = start_training(filtered_repo_id, root=args.output, output_dir='/mnt/local/checkpoints', policy_name=args.policy_name, job_name=filtered_job_name, overwrite_checkpoint=args.overwrite_checkpoint)
         run_eval(pretrained_model_path, filtered_repo_id, wandb_id, filtered_eval_episodes, root=args.output)
 
     if args.plot:
