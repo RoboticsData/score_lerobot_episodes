@@ -217,8 +217,6 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
             for file in files:
                 if file.endswith('.mp4'):
                     video_path = os.path.join(root_dir, file)
-                    print(file)
-                    print()
                     print(f"Processing video: {video_path}")
 
                     # Extract episode index from video path
@@ -228,14 +226,12 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
                             episode_idx = int(file.split('episode_')[1].split('.')[0])
                         except (IndexError, ValueError):
                             pass
-                    print(f'episode {episode_idx}')
                     # Write to a temp path first, then atomically replace on success
                     tmp_out = f"{video_path}.tmp_corrupted.mp4"
                     video_corrupted = False
                     try:
                         video_corrupted = corrupt_video(video_path, tmp_out, corruption_prob)
                         if video_corrupted:
-                            print('this was corrupted')
                             os.replace(tmp_out, video_path)  # atomic on same filesystem
                         else:
                             # No corruption applied: ensure temp is removed if created
