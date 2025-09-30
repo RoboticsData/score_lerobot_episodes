@@ -247,7 +247,6 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
                                 pass
 
                     if episode_idx is not None:
-                        print(f'episode {episode_idx} is not null')
                         if episode_idx not in corruption_log["corrupted_episodes"]:
                             corruption_log["corrupted_episodes"][episode_idx] = {
                                 "video_corrupted": False,
