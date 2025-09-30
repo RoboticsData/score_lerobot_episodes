@@ -217,22 +217,25 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
             for file in files:
                 if file.endswith('.mp4'):
                     video_path = os.path.join(root_dir, file)
+                    print(file)
+                    print()
                     print(f"Processing video: {video_path}")
 
                     # Extract episode index from video path
                     episode_idx = None
                     if 'episode_' in file:
                         try:
-                            episode_idx = int(file.split('episode_')[1].split('_')[0])
+                            episode_idx = int(file.split('episode_')[1].split('.')[0])
                         except (IndexError, ValueError):
                             pass
-
+                    print(f'episode {episode_idx}')
                     # Write to a temp path first, then atomically replace on success
                     tmp_out = f"{video_path}.tmp_corrupted.mp4"
                     video_corrupted = False
                     try:
                         video_corrupted = corrupt_video(video_path, tmp_out, corruption_prob)
                         if video_corrupted:
+                            print('this was corrupted')
                             os.replace(tmp_out, video_path)  # atomic on same filesystem
                         else:
                             # No corruption applied: ensure temp is removed if created
@@ -248,6 +251,7 @@ def corrupt_dataset(repo_id: str, output_path: str, corruption_prob: float, over
                                 pass
 
                     if episode_idx is not None:
+                        print(f'episode {episode_idx} is not null')
                         if episode_idx not in corruption_log["corrupted_episodes"]:
                             corruption_log["corrupted_episodes"][episode_idx] = {
                                 "video_corrupted": False,
@@ -332,6 +336,8 @@ def main():
                        help="Custom suffix for output directory (default: _corrupted_X%%)")
     parser.add_argument("--overwrite", action="store_true", default=False,
                        help="Overwrite output directory if it exists")
+    parser.add_argument("--seed", type=int, default=42,
+                    help="Random seed for reproducibility (default: 42) (set to -1 to disable seeding)")
     
     args = parser.parse_args()
     
@@ -344,7 +350,13 @@ def main():
     print(f"Input root: {root}")
     print(f"Output dataset: {output_path}")
     print(f"Corruption proportion: {args.corruption_prob}%")
-    
+
+    #set random seed for reproducibility, we need to set the seed for both random and np.random
+    if args.seed != -1:
+        print(f"Setting random seed to {args.seed}")
+        random.seed(args.seed) #we use random in helper function to corrupt video frames
+        np.random.seed(args.seed) #we use np.random to corrupt motion data
+        
     # Validate corruption proportion
     if not 0 <= args.corruption_prob <= 1:
         raise ValueError("Corruption proportion must be between 0 and 1")
