@@ -92,15 +92,15 @@ Use this toolkit to:
 Score a dataset and save results:
 ```bash
 python score_dataset.py \
-  --repo_id Daddyboss/so_100_test4 \
-  --output ./output/Daddyboss/so_100_test4 \
+  --repo_id lerobot/aloha_static_pro_pencil \
+  --output ./output/lerobot/aloha_static_pro_pencil \
   --threshold 0.5
 ```
 
 This will:
 1. Download and load the dataset from HuggingFace
 2. Score each episode across multiple quality dimensions
-3. Save scores to `results/Daddyboss_so_100_test4_scores.json`
+3. Save scores to output path
 4. Filter episodes with aggregate score >= 0.5
 5. Save the filtered dataset to the output directory
 
@@ -161,11 +161,10 @@ python score_dataset.py \
   --policy_name act
 ```
 
-#### 5. Score with custom nominal time and visualize distributions
+#### 5. Visualize distributions
 ```bash
 python score_dataset.py \
   --repo_id username/my-robot-dataset \
-  --nominal 30.0 \
   --threshold 0.7 \
   --plot True
 ```
@@ -183,19 +182,6 @@ python score_dataset.py \
 ## 📊 Scoring Dimensions
 
 Each episode receives a score from 0 to 1 on multiple dimensions. The **aggregate score** is a weighted average of all enabled dimensions:
-
-### Current Default Weights (configurable in `DatasetScorer`)
-- **Visual Clarity** (20%): Detects blurry, overexposed, or underexposed frames using OpenCV
-- **Smoothness** (10%): Measures smoothness of robot motion via joint angle derivatives
-- **Collision** (10%): Identifies sudden acceleration spikes indicating potential collisions
-- **Runtime** (20%): Penalizes episodes that are too short/long compared to statistics
-
-### Additional Available Dimensions (commented out by default)
-- **Task Success**: Uses VLM to verify task completion
-- **Path Efficiency**: Measures deviation from optimal joint-space paths
-- **Joint Stability**: Checks if robot settles at goal pose
-- **Gripper Consistency**: Validates gripper state transitions
-
 You can customize weights by editing the `criteria` dictionary in `score_dataset.py:29-38`.
 
 ---
@@ -373,8 +359,3 @@ LeRobot Episode Scoring Toolkit is distributed under the **Apache 2.0 License**.
 - **Discussions**: [GitHub Discussions](https://github.com/RoboticsData/score_lerobot_episodes/discussions)
 - **Documentation**: This README and inline code documentation
 
----
-
-<p align="center">
-  Made with ❤️ by the RoboticsData community
-</p>
