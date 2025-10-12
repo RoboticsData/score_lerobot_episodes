@@ -20,7 +20,8 @@ It combines classic Computer Vision heuristics (blur / exposure tests, kinematic
 | Path efficiency             | `score_path_efficiency`                             | Ratio of straight-line vs. actual joint-space path           |
 | Collision / spikes          | `score_collision`                                   | Sudden acceleration outliers (proxy for contacts)            |
 | Joint stability (final 2 s) | `score_joint_stability`                             | Stillness at the goal pose                                   |
-| Gripper consistency         | `score_gripper_consistency`                         | Binary “closed vs. holding” agreement                        |
+| Gripper consistency         | `score_gripper_consistency`                         | Binary "closed vs. holding" agreement                        |
+| Actuator saturation         | `score_actuator_saturation`                         | Difference between commanded actions and achieved states     |
 | Task success (VLM)          | `score_task_success` (via `VLMInterface`)           | Gemini grades whether the desired behaviour happened         |
 | Runtime penalty / outliers  | `score_runtime` + `build_time_stats`, `is_time_outlier` | Episode length vs. nominal / Tukey-IQR / Z-score fences      |
 
