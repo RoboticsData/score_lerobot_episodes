@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
 from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
-from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
+from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_actuator_saturation
 from scores import build_time_stats           # (your helper from the other file)
 from train import start_training
 from evaluation import get_eval_episodes, run_eval
@@ -18,9 +18,9 @@ from lerobot.constants import HF_LEROBOT_HOME
 
 class DatasetScorer:
     def __init__(self, vlm: VLMInterface, time_stats: dict):
-        def runtime_with_stats(vp, st, vlm, task, nominal):
+        def runtime_with_stats(vp, st, acts, vlm, task, nominal):
             return score_runtime(
-                vp, st, vlm, task, nominal,
+                vp, st, acts, vlm, task, nominal,
                 time_stats=self.time_stats,       # ← new
                 outlier_penalty=0.0,              # or whatever you like
             )
@@ -32,6 +32,7 @@ class DatasetScorer:
             "smoothness":          (10, score_smoothness),
             "collision":           (10, score_collision),
             "runtime":              (20, runtime_with_stats),
+            "actuator_saturation": (10, score_actuator_saturation),
             # "path_efficiency":     (10, score_path_efficiency),
             # "joint_stability":         (5, score_joint_stability),
             # "gripper_consistency":  (5, score_gripper_consistency),
@@ -39,10 +40,10 @@ class DatasetScorer:
         self.time_stats = time_stats
         self.norm = sum(w for w, _ in self.criteria.values())
 
-    def score(self, video_path, states, task, nominal):
+    def score(self, video_path, states, actions, task, nominal):
         subs, total = {}, 0.
         for k, (w, fn) in self.criteria.items():
-            val = fn(video_path, states, self.vlm, task, nominal)
+            val = fn(video_path, states, actions, self.vlm, task, nominal)
             subs[k] = val
             total += w * val
         return total / self.norm, subs
@@ -94,7 +95,8 @@ def main():
         for camera_type in episode['vid_paths']:
             vid_path = episode['vid_paths'][camera_type]
             states = episode['states']
-            total, subs = scorer.score(vid_path, states, task, args.nominal)
+            actions = episode['actions']
+            total, subs = scorer.score(vid_path, states, actions, task, args.nominal)
             rows.append((episode_index, camera_type, vid_path, total, subs))
             #Append the raw data into a list of dictionaries for later JSON output.
             output_data.append({

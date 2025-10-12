@@ -6,6 +6,7 @@ from vlm import VLMInterface
 def score_visual_clarity(
     vp: str | pathlib.Path,
     sts,                       # unused but kept for signature compatibility
+    acts,                      # unused but kept for signature compatibility
     vlm,                      # may be None
     task, nom,                # also unused here
     sample_every: int = 60

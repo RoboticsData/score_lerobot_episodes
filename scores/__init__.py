@@ -1,7 +1,7 @@
 import cv2, numpy as np, pathlib
 
 from .visual import score_visual_clarity
-from .path import score_smoothness, score_path_efficiency, score_collision, score_joint_stability, score_gripper_consistency
+from .path import score_smoothness, score_path_efficiency, score_collision, score_joint_stability, score_gripper_consistency, score_actuator_saturation
 
 def build_time_stats(states):
     """
@@ -38,9 +38,9 @@ def is_time_outlier(duration, stats, mode="iqr", z_thresh=3.):
         z = abs(duration - stats["mean"]) / stats["std"]
         return z > z_thresh
 
-def score_task_success(vp, sts, vlm, task, nom): return vlm.task_success(str(vp), task) if vlm is not None else 0.5
+def score_task_success(vp, sts, acts, vlm, task, nom): return vlm.task_success(str(vp), task) if vlm is not None else 0.5
 
-def score_runtime(vp, sts, vlm, task, nom,
+def score_runtime(vp, sts, acts, vlm, task, nom,
                   time_stats: dict | None = None,
                   outlier_penalty: float = 0.0):
     """
