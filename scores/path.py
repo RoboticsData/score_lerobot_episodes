@@ -76,33 +76,20 @@ def score_gripper_consistency(vp, sts, acts, vlm, task, nom):
     return np.mean(scores)
 
 def score_actuator_saturation(vp, sts, acts, vlm, task, nom, *, threshold_deg: float = 7):
-    """
-    Score based on actuator saturation using |a_t - s_{t+1}|.
-    Large differences between commanded actions and resulting states indicate
-    actuators operating near their limits. Lower scores indicate more saturation.
-
-    Args:
-        threshold_deg: Threshold for |a_t - s_{t+1}|. Differences above this
-                  are considered saturated (default: 10 deg)
-
-    Returns:
-        Score in [0, 1] where 1 = no saturation, 0 = fully saturated
-    """
     states = np.array([st.get("q") for st in sts])
     if (states == None).any():
         raise ValueError('Invalid state vector')
 
-    # Convert actions to numpy array
-    actions = np.array(acts)
-
     # Ensure we have matching dimensions
     # actions[t] should correspond to transition from states[t] to states[t+1]
+    actions = np.array(acts)
     assert(len(actions) == len(states))
 
     # Compute |a_t - s_{t+1}| for each timestep
     action_state_diff = np.abs(actions[:-1] - states[1:])
 
     # Check what fraction of time each joint exceeds threshold
+    # TODO: This assumes that the action space is in degrees and that it is int the same format as the state space.
     saturation_mask = action_state_diff > threshold_deg
 
     # Compute saturation ratio (fraction of timesteps where any joint is saturated)
