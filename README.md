@@ -32,7 +32,6 @@ Use this toolkit to:
 - [Usage](#usage)
   - [Command-line Arguments](#command-line-arguments)
   - [Examples](#examples)
-- [Scoring Dimensions](#scoring-dimensions)
 - [Output Format](#output-format)
 - [Repository Structure](#repository-structure)
 - [Training and Evaluation](#training-and-evaluation)
@@ -176,13 +175,6 @@ python score_dataset.py \
   --root /path/to/local/dataset \
   --output ./filtered_output
 ```
-
----
-
-## 📊 Scoring Dimensions
-
-Each episode receives a score from 0 to 1 on multiple dimensions. The **aggregate score** is a weighted average of all enabled dimensions:
-You can customize weights by editing the `criteria` dictionary in `score_dataset.py:29-38`.
 
 ---
 
