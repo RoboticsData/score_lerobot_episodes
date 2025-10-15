@@ -25,6 +25,20 @@ def score_path_efficiency(vp, sts, vlm, task, nom):
     scores = 0. if path < 1e-6 else float(np.clip(straight / path, 0., 1.))
     return np.mean(scores)
 
+def score_idle_velocity(vp, sts, vlm, task, nom):
+    threshold = 0.1
+    states = np.array([st.get("q") for st in sts])
+    timestamps = np.array([st["t"] for st in sts])
+    """Detect idle based on low velocity."""
+    velocities = np.diff(states, axis=0) / np.diff(timestamps)[:, None]
+    velocity_magnitude = np.linalg.norm(velocities, axis=1)
+    idle_mask = velocity_magnitude < threshold
+
+    #idle_time = np.sum(idle_mask * np.diff(timestamps))
+    idle_ratio = np.mean(idle_mask)
+
+    return 1-idle_ratio
+
 def score_collision(vp, sts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])

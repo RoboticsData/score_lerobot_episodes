@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
 from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
-from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
+from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_idle_velocity
 from scores import build_time_stats           # (your helper from the other file)
 from train import start_training
 from evaluation import get_eval_episodes, run_eval
