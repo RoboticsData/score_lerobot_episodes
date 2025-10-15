@@ -1,7 +1,7 @@
 import cv2, numpy as np, pathlib
 
 from .visual import score_visual_clarity
-from .path import score_smoothness, score_path_efficiency, score_collision, score_joint_stability, score_gripper_consistency, score_actuator_saturation
+from .path import score_smoothness, score_path_efficiency, score_idle_velocity, score_collision, score_joint_stability, score_gripper_consistency, score_actuator_saturation
 
 def build_time_stats(states):
     """
