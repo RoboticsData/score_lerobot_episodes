@@ -103,8 +103,6 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
 
     return max(blur_penalty, exposure_penalty)
 
-
-
 if __name__ == '__main__':
     score = score_visual_clarity(
         vp='input_video.mp4',
