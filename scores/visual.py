@@ -30,6 +30,62 @@ def score_visual_clarity(
     cap.release()
     return 0.0 if not penalties else max(0.0, 1.0 - np.mean(penalties))
 
+def score_blur(
+    vp: str | pathlib.Path,
+    sts,                       # unused but kept for signature compatibility
+    vlm,                      # may be None
+    task, nom,                # also unused here
+    sample_every: int = 60
+) -> float:
+    cap = cv2.VideoCapture(str(vp))
+    penalties, i = [], 0
+
+    while cap.isOpened():
+        ok, frame = cap.read()
+        if not ok:
+            break
+        i += 1
+        if i % sample_every:
+            continue
+        #score blur penalty for frame
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # 1-a  Sharpness (variance of Laplacian)
+        fm = cv2.Laplacian(gray, cv2.CV_64F).var()
+        blur_penalty = max(0.0, min(1.0, 1 - fm/80.0))
+        penalties.append(float(blur_penalty))
+    cap.release()
+    return max(0.0, 1.0 - np.mean(penalties))
+
+def score_darkness(
+    vp: str | pathlib.Path,
+    sts,                       # unused but kept for signature compatibility
+    vlm,                      # may be None
+    task, nom,                # also unused here
+    sample_every: int = 60
+) -> float:
+    cap = cv2.VideoCapture(str(vp))
+    penalties, i = [], 0
+
+    while cap.isOpened():
+        ok, frame = cap.read()
+        if not ok:
+            break
+        i += 1
+        if i % sample_every:
+            continue
+        #score blur penalty for frame
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        ## 1-b  Exposure
+        mean_intensity = gray.mean()
+        if mean_intensity < 50:                           # too dark
+            exposure_penalty = (50.0 - mean_intensity) / 50.0
+        else:
+            exposure_penalty = 0.0
+        penalties.append(float(exposure_penalty))
+    cap.release()
+    return max(0.0, 1.0 - np.mean(penalties))
+
 
 def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -46,6 +102,22 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
         exposure_penalty = 0.0
 
     return max(blur_penalty, exposure_penalty)
+
+
+
+if __name__ == '__main__':
+    score = score_visual_clarity(
+        vp='input_video.mp4',
+        sts=[{}],            # no state needed
+        vlm=VLMInterface(),
+        task=None,
+        nom=None,
+    )
+
+    # Basic sanity check
+    assert 0.0 <= score <= 1.0, "score out of expected [0, 1] range"
+    print('Visual score: ', score)
+
 
 if __name__ == '__main__':
     score = score_visual_clarity(
