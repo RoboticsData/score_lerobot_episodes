@@ -118,16 +118,3 @@ if __name__ == '__main__':
     assert 0.0 <= score <= 1.0, "score out of expected [0, 1] range"
     print('Visual score: ', score)
 
-
-if __name__ == '__main__':
-    score = score_visual_clarity(
-        vp='input_video.mp4',
-        sts=[{}],            # no state needed
-        vlm=VLMInterface(),
-        task=None,
-        nom=None,
-    )
-
-    # Basic sanity check
-    assert 0.0 <= score <= 1.0, "score out of expected [0, 1] range"
-    print('Visual score: ', score)
