@@ -217,7 +217,9 @@ def organize_by_episode(dataset):
     for vid_path in vid_paths:
         stubs = vid_path.split('/')
         episode_name, camera_type = stubs[-1], stubs[-2]
+        print(episode_name)
         episode_idx = int(episode_name.split('_')[1].split('.mp4')[0])
+        print(episode_idx)
         if episode_idx not in episode_map:
             episode_map[episode_idx] = {
                 'vid_paths' : {}
