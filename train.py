@@ -1,4 +1,4 @@
-from lerobot.scripts import train as lerobot_train
+from lerobot.scripts import lerobot_train
 from lerobot.configs.train import TrainPipelineConfig
 from lerobot.configs.default import DatasetConfig, EvalConfig, WandBConfig
 #from lerobot.envs.factory import make_env_config
