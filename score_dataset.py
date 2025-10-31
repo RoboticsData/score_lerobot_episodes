@@ -13,7 +13,7 @@ import pickle
 import os
 import uniplot
 from lerobot.configs.train import TrainPipelineConfig
-from lerobot.scripts import train as lerobot_train
+from lerobot.scripts import lerobot_train
 from lerobot.constants import HF_LEROBOT_HOME
 
 class DatasetScorer:
