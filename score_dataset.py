@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Tuple
 
 from vlm import VLMInterface
-from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
+from data import organize_by_episode, load_dataset_hf, save_filtered_dataset, get_scorable_video_path
 from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_idle_velocity, score_actuator_saturation
 from scores import build_time_stats           # (your helper from the other file)
 from train import start_training
@@ -12,9 +12,27 @@ import hashlib
 import pickle
 import os
 import uniplot
+
+# Handle different lerobot versions for imports
+try:
+    import lerobot
+    from packaging import version
+    lerobot_version = version.parse(lerobot.__version__)
+
+    if lerobot_version <= version.parse("0.4.0"):
+        # Old version: <= 0.4.0
+        from lerobot.constants import HF_LEROBOT_HOME
+    else:
+        # New version: > 0.4.0
+        from lerobot.utils.constants import HF_LEROBOT_HOME
+except Exception:
+    # Fallback: try new import first, then old
+    try:
+        from lerobot.utils.constants import HF_LEROBOT_HOME
+    except (ImportError, AttributeError):
+        from lerobot.constants import HF_LEROBOT_HOME
+
 from lerobot.configs.train import TrainPipelineConfig
-from lerobot.scripts import lerobot_train
-from lerobot.utils.constants import HF_LEROBOT_HOME
 
 class DatasetScorer:
     def __init__(self, vlm: VLMInterface, time_stats: dict):
@@ -94,19 +112,30 @@ def main():
         episode_total = 0
         for camera_type in episode['vid_paths']:
             vid_path = episode['vid_paths'][camera_type]
+            video_info = episode.get('video_info', {}).get(camera_type, None)
             states = episode['states']
             actions = episode['actions']
-            total, subs = scorer.score(vid_path, states, actions, task, args.nominal)
-            rows.append((episode_index, camera_type, vid_path, total, subs))
-            #Append the raw data into a list of dictionaries for later JSON output.
-            output_data.append({
-                "episode_id": episode_index,
-                "camera_type": camera_type,
-                "video_path": vid_path,
-                "aggregate_score": total,
-                "per_attribute_scores": subs
-            })
-            episode_total += total
+
+            # Get a scorable video path (extracts segment for v3.0, returns path for v2.1)
+            scorable_path, is_temp = get_scorable_video_path(vid_path, video_info)
+
+            try:
+                total, subs = scorer.score(scorable_path, states, actions, task, args.nominal)
+                rows.append((episode_index, camera_type, vid_path, total, subs))
+                #Append the raw data into a list of dictionaries for later JSON output.
+                output_data.append({
+                    "episode_id": episode_index,
+                    "camera_type": camera_type,
+                    "video_path": vid_path,
+                    "aggregate_score": total,
+                    "per_attribute_scores": subs
+                })
+                episode_total += total
+            finally:
+                # Clean up temporary video file if created
+                if is_temp and os.path.exists(scorable_path):
+                    os.remove(scorable_path)
+
         agg_mean += episode_total / len(episode['vid_paths'])
     agg_mean /= len(rows)
         

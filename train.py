@@ -1,7 +1,24 @@
-from lerobot.scripts import lerobot_train
+# Handle different lerobot versions
+try:
+    import lerobot
+    from packaging import version
+    lerobot_version = version.parse(lerobot.__version__)
+
+    if lerobot_version <= version.parse("0.4.0"):
+        # Old version: <= 0.4.0
+        from lerobot.scripts import train as lerobot_train
+    else:
+        # New version: > 0.4.0
+        from lerobot.scripts import lerobot_train
+except Exception:
+    # Fallback: try new import first, then old
+    try:
+        from lerobot.scripts import lerobot_train
+    except (ImportError, AttributeError):
+        from lerobot.scripts import train as lerobot_train
+
 from lerobot.configs.train import TrainPipelineConfig
 from lerobot.configs.default import DatasetConfig, EvalConfig, WandBConfig
-#from lerobot.envs.factory import make_env_config
 from lerobot.policies.factory import make_policy_config
 import os
 from pathlib import Path
