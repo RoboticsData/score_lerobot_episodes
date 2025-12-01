@@ -24,6 +24,10 @@ def get_dataset_version(root_path):
         info = json.load(f)
 
     version = info.get('codebase_version', V21)
+    
+    # Normalize version to ensure it has 'v' prefix
+    if not version.startswith('v'):
+        version = f'v{version}'
     return version
 
 def load_episodes_v30(root_path):
