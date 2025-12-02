@@ -49,7 +49,7 @@ class DatasetScorer:
             "visual_clarity":      (20, score_visual_clarity),
             "smoothness":          (10, score_smoothness),
             "collision":           (10, score_collision),
-            #"runtime":              (20, runtime_with_stats),
+            "runtime":              (20, runtime_with_stats),
             "actuator_sat": (10, score_actuator_saturation),
             # "path_efficiency":     (10, score_path_efficiency),
             # "joint_stability":         (5, score_joint_stability),
