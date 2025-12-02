@@ -50,7 +50,7 @@ class DatasetScorer:
             "smoothness":          (10, score_smoothness),
             "collision":           (10, score_collision),
             "runtime":              (20, runtime_with_stats),
-            "actuator_saturation": (10, score_actuator_saturation),
+            "actuator_sat": (10, score_actuator_saturation),
             # "path_efficiency":     (10, score_path_efficiency),
             # "joint_stability":         (5, score_joint_stability),
             # "gripper_consistency":  (5, score_gripper_consistency),
@@ -136,7 +136,7 @@ def main():
                 if is_temp and os.path.exists(scorable_path):
                     os.remove(scorable_path)
 
-        agg_mean += episode_total / len(episode['vid_paths'])
+        agg_mean += episode_total 
     agg_mean /= len(rows)
         
 
@@ -154,13 +154,12 @@ def main():
 
     print(f"Successfully saved scores to: {output_file_path}")
 
-
     # ------------------------------------------------------------------
-    #  Pretty-print results
+    #  Pretty-print results 
     # ------------------------------------------------------------------
     crit_names = list(scorer.criteria.keys())
 
-    EP_W, CAM_W, SC_W, AG_W = 8, 30, 11, 10          # col widths
+    EP_W, CAM_W, SC_W, AG_W = 8, 15, 11, 10          # col widths
     score_fmt = f'{{:>{SC_W}.3f}}'                    # one per-criterion cell
     col_fmt   = (
         f'{{:<{EP_W}}}{{:<{CAM_W}}}'                 # Episode | Camera
@@ -182,20 +181,23 @@ def main():
 
     distributions = {}
     good_episodes = {}
+
     for ep_idx, cam, _vid_path, total, subs in rows:
         for k in crit_names:
             if k not in distributions:
                 distributions[k] = []
             distributions[k].append(subs[k])
+        cleaned_cam = cam.replace('observation.images.', '')
         print(
             col_fmt.format(
                 ep_idx,
-                cam,
+                cleaned_cam,
                 *[subs[k] for k in crit_names],
                 total,
                 'GOOD' if total >= args.threshold else 'BAD'
             )
         )
+
         if ep_idx not in good_episodes or good_episodes[ep_idx]:
             # Check both cameras, if at least one is false, we will set it to false
             good_episodes[ep_idx] = (total >= args.threshold)
