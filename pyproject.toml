@@ -12,11 +12,14 @@ dependencies = [
     "pydantic",
     "streamlit",
     "plotly",
-    "python-dotenv",  # Note: 'dotenv' package is actually called 'python-dotenv'
+    "python-dotenv",
     "uniplot",
-    "pyarrow",  # This is used in data.py but missing from requirements.txt
+    "pyarrow",
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["data", "score_dataset", "evaluation", "vlm", "ui", "corrupt", "train"]
