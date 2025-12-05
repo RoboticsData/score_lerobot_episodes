@@ -8,10 +8,10 @@ import os
 import sys
 from pathlib import Path
 
-from vlm import VLMInterface
-from data import organize_by_episode, load_dataset_hf, save_filtered_dataset
-from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
-from scores import build_time_stats
+from score_lerobot_episodes.vlm import VLMInterface
+from score_lerobot_episodes.data import organize_by_episode, load_dataset_hf, save_filtered_dataset
+from score_lerobot_episodes.scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency
+from score_lerobot_episodes.scores import build_time_stats
 from score_dataset import DatasetScorer
 
 st.set_page_config(
