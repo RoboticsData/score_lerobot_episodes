@@ -1,0 +1,25 @@
+[project]
+name = "score-lerobot-episodes"
+version = "0.1.0"
+description = "Utilities for scoring LeRobot episodes"
+requires-python = ">=3.8"
+dependencies = [
+    "lerobot",
+    "opencv-python",
+    "numpy",
+    "pandas",
+    "google-generativeai",
+    "pydantic",
+    "streamlit",
+    "plotly",
+    "python-dotenv",
+    "uniplot",
+    "pyarrow",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

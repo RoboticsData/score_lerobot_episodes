@@ -2,12 +2,12 @@ import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 import json
 from typing import Dict, List, Tuple
 
-from vlm import VLMInterface
-from data import organize_by_episode, load_dataset_hf, save_filtered_dataset, get_scorable_video_path
-from scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_idle_velocity, score_actuator_saturation
-from scores import build_time_stats           # (your helper from the other file)
+from score_lerobot_episodes.vlm import VLMInterface
+from score_lerobot_episodes.data import organize_by_episode, load_dataset_hf, save_filtered_dataset, get_scorable_video_path
+from score_lerobot_episodes.scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_idle_velocity, score_actuator_saturation
+from score_lerobot_episodes.scores import build_time_stats           # (your helper from the other file)
 from train import start_training
-from evaluation import get_eval_episodes, run_eval
+from score_lerobot_episodes.evaluation import get_eval_episodes, run_eval
 import hashlib
 import pickle
 import os
