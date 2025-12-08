@@ -74,7 +74,17 @@ Use this toolkit to:
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   # Install in editable mode with all dependencies
+   pip install -e .
+   ```
+   
+   Or using uv (faster):
+   ```bash
+   # Install uv if you haven't already
+   pip install uv
+   
+   # Install the package
+   uv pip install -e .
    ```
 
 3. **Set up API keys (optional)**
@@ -220,25 +230,29 @@ Percentage of episodes removed: 0.25, total: 5
 When using `--output`, a new filtered dataset is created with only episodes scoring above the threshold, maintaining the original LeRobot dataset structure.
 
 ---
-
 ## 📂 Repository Structure
-
 ```
 score_lerobot_episodes/
-├── score_dataset.py      # Main scoring script
-├── data.py               # Dataset loading and filtering utilities
-├── vlm.py                # Vision-Language Model interface (Gemini)
-├── train.py              # Training pipeline integration
-├── evaluation.py         # Evaluation utilities
-├── corrupt.py            # Data corruption tools for robustness testing
-├── ui.py                 # Streamlit web interface (if available)
-├── requirements.txt      # Python dependencies
-├── README.md            # This file
-├── CONTRIBUTING.md      # Contribution guidelines
-├── LICENSE              # Apache 2.0 license
-├── results/             # Generated score JSON files
-├── output/              # Filtered datasets
-└── checkpoints/         # Training checkpoints
+├── src/
+│   └── score_lerobot_episodes/  # Installable package
+│       ├── __init__.py
+│       ├── data.py              # Dataset utilities
+│       ├── vlm.py               # Vision-Language Model 
+│       ├── evaluation.py        # Evaluation utilities
+│       ├── corrupt.py           # Data corruption tools 
+│       └── scores/              # Scoring criteria modules
+├── score_dataset.py             # Main scoring script
+├── train.py                     # Training pipeline integration
+├── ui.py                        # Streamlit web interface (if available)
+├── pyproject.toml               # Package configuration and dependencies
+├── requirements.txt             # Python dependencies (legacy)
+├── README.md                    # This file
+├── CONTRIBUTING.md              # Contribution guidelines
+├── LICENSE                      # Apache 2.0 license
+├── .gitignore                   # Git ignore rules
+├── results/                     # Generated score JSON files
+├── output/                      # Filtered datasets
+└── checkpoints/                 # Training checkpoints
 ```
 
 ---

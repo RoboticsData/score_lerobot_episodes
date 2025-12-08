@@ -13,4 +13,7 @@ __pycache__/*
 stats.*.pickle
 checkpoints/
 outputs/
-output/
+output/build/
+*.egg-info/
+dist/
+*.pyc
