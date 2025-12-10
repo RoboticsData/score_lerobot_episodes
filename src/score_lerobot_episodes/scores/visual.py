@@ -6,7 +6,7 @@ from vlm import VLMInterface
 ##SCORING FRAME FUNCTIONS
 
 
-def calculate_blur_score(gray: np.ndarray, max_var = 1000.0) -> float:
+def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
     """
     Calculate blur score using Laplacian variance.
     Higher score = sharper image.
@@ -28,7 +28,7 @@ def calculate_blur_score(gray: np.ndarray, max_var = 1000.0) -> float:
 
     return float(normalized)
 
-def calculate_darkness_score(gray: np.ndarray) -> float:
+def calculate_darkness_score(gray: np.ndarray, max_brightness: float = 255.0) -> float:
     """
     Calculate darkness score based on mean brightness.
     Higher score = brighter image.
@@ -43,7 +43,28 @@ def calculate_darkness_score(gray: np.ndarray) -> float:
     mean_brightness = gray.mean()
 
     # Normalize to 0-1 range (0-255 -> 0-1)
-    normalized = mean_brightness / 255.0
+    normalized = mean_brightness / max_brightness
+
+    return float(normalized)
+
+def calculate_contrast_score(gray: np.ndarray) -> float:
+    """
+    Calculate contrast score using standard deviation.
+    Higher score = more contrast.
+
+    Args:
+        gray: Grayscale image as numpy array
+
+    Returns:
+        Contrast score (0-1, where 1 = high contrast, 0 = low contrast)
+    """
+    # Calculate standard deviation as measure of contrast
+    std_dev = gray.std()
+
+    # Normalize to 0-1 range
+    # Typical ranges: <20 = low contrast, >50 = high contrast
+    max_std = 80.0
+    normalized = min(std_dev / max_std, 1.0)
 
     return float(normalized)
 
@@ -51,8 +72,8 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # 1-a  Sharpness (variance of Laplacian)
-    fm = cv2.Laplacian(gray, cv2.CV_64F).var()
-    blur_penalty = max(0.0, min(1.0, 1 - fm/80.0))  # 0 good → 1 bad
+    blur_score = calculate_blur_score(gray, max_var = 80.0)
+    blur_penalty = max(0.0, min(1.0, 1 - blur_score))  # 0 = sharp → 1 = blurry
 
     # 1-b  Exposure
     mean_intensity = gray.mean()
