@@ -47,7 +47,7 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     dark_score = calculate_darkness_score(gray, max_std = 50.0)
     exposure_penalty = 1.0 - dark_score 
 
-    return max(blur_penalty, exposure_penalty, 0.0)
+    return max(blur_penalty, exposure_penalty)
 
 ##VIDEO SCORING FUNCTIONS
 
