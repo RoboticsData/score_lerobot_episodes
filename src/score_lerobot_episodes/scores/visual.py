@@ -7,17 +7,6 @@ from vlm import VLMInterface
 
 
 def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
-    """
-    Calculate blur score using Laplacian variance.
-    Higher score = sharper image.
-
-    Args:
-        gray: Grayscale image as numpy array
-
-    Returns:
-        Blur score (0-1, where 1 = sharp, 0 = blurry)
-        Normalized based on typical variance ranges
-    """
     # Calculate Laplacian variance
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
 
@@ -29,41 +18,20 @@ def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
     return float(normalized)
 
 def calculate_darkness_score(gray: np.ndarray, max_brightness: float = 255.0) -> float:
-    """
-    Calculate darkness score based on mean brightness.
-    Higher score = brighter image.
-
-    Args:
-        gray: Grayscale image as numpy array
-
-    Returns:
-        Darkness score (0-1, where 1 = bright, 0 = dark)
-    """
-    # Calculate mean brightness
-    mean_brightness = gray.mean()
+    
+    mean_brightness = gray.mean() # Calculate mean brightness
 
     # Normalize to 0-1 range (0-255 -> 0-1)
     normalized = mean_brightness / max_brightness
 
     return float(normalized)
 
-def calculate_contrast_score(gray: np.ndarray) -> float:
-    """
-    Calculate contrast score using standard deviation.
-    Higher score = more contrast.
-
-    Args:
-        gray: Grayscale image as numpy array
-
-    Returns:
-        Contrast score (0-1, where 1 = high contrast, 0 = low contrast)
-    """
+def calculate_contrast_score(gray: np.ndarray, max_std: float = 80.0) -> float:
     # Calculate standard deviation as measure of contrast
     std_dev = gray.std()
 
     # Normalize to 0-1 range
     # Typical ranges: <20 = low contrast, >50 = high contrast
-    max_std = 80.0
     normalized = min(std_dev / max_std, 1.0)
 
     return float(normalized)
@@ -76,13 +44,10 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     blur_penalty = max(0.0, min(1.0, 1 - blur_score))  # 0 = sharp → 1 = blurry
 
     # 1-b  Exposure
-    mean_intensity = gray.mean()
-    if mean_intensity < 50:                           # too dark
-        exposure_penalty = (50.0 - mean_intensity) / 50.0
-    else:
-        exposure_penalty = 0.0
+    dark_score = calculate_darkness_score(gray, max_std = 50.0)
+    exposure_penalty = 1.0 - dark_score 
 
-    return max(blur_penalty, exposure_penalty)
+    return max(blur_penalty, exposure_penalty, 0.0)
 
 ##VIDEO SCORING FUNCTIONS
 
