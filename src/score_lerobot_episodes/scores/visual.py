@@ -9,21 +9,16 @@ from vlm import VLMInterface
 def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
     # Calculate Laplacian variance
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-
-    # Normalize to 0-1 range
+    
     # Typical ranges: <100 = blurry, >500 = sharp
-    # Using sigmoid-like normalization
-    normalized = min(laplacian_var / max_var, 1.0)
+    normalized = min(laplacian_var / max_var, 1.0) # Normalize to 0-1 range
 
     return float(normalized)
 
 def calculate_darkness_score(gray: np.ndarray, max_brightness: float = 255.0) -> float:
-    
     mean_brightness = gray.mean() # Calculate mean brightness
-
     # Normalize to 0-1 range (0-255 -> 0-1)
     normalized = mean_brightness / max_brightness
-
     return float(normalized)
 
 def calculate_contrast_score(gray: np.ndarray, max_std: float = 80.0) -> float:
