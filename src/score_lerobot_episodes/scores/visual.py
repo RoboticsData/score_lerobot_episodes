@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
-from vlm import VLMInterface
+from score_lerobot_episodes.vlm import VLMInterface
 
 ##SCORING FRAME FUNCTIONS
 

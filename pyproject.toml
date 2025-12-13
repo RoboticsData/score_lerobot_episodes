@@ -2,7 +2,7 @@
 name = "score-lerobot-episodes"
 version = "0.1.0"
 description = "Utilities for scoring LeRobot episodes"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "lerobot",
     "opencv-python",
