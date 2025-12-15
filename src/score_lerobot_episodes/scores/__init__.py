@@ -1,6 +1,6 @@
 import cv2, numpy as np, pathlib
 
-from .visual import score_visual_clarity, calculate_blur_score
+from .visual import score_visual_clarity, calculate_blur_score, calculate_contrast_score, calculate_darkness_score
 from .path import score_smoothness, score_path_efficiency, score_idle_velocity, score_collision, score_joint_stability, score_gripper_consistency, score_actuator_saturation
 
 def build_time_stats(states):
