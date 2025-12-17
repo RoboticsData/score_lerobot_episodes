@@ -1,4 +1,4 @@
-from data import load_dataset_hf
+from .data import load_dataset_hf
 from contextlib import nullcontext
 from lerobot.policies.factory import make_policy
 from lerobot.configs.policies import PreTrainedConfig

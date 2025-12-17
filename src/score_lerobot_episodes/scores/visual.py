@@ -39,7 +39,7 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     blur_penalty = max(0.0, min(1.0, 1 - blur_score))  # 0 = sharp → 1 = blurry
 
     # 1-b  Exposure
-    dark_score = calculate_darkness_score(gray, max_std = 50.0)
+    dark_score = calculate_darkness_score(gray, max_brightness = 50.0)
     exposure_penalty = 1.0 - dark_score 
 
     return max(blur_penalty, exposure_penalty)
@@ -56,7 +56,6 @@ def score_visual_clarity(
 ) -> float:
     cap = cv2.VideoCapture(str(vp))
     penalties, i = [], 0
-
     while cap.isOpened():
         ok, frame = cap.read()
         if not ok:
