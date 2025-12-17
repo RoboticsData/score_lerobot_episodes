@@ -407,9 +407,10 @@ def _save_filtered_dataset_v30(input_path, output_path, good_episodes):
         raise
 
 
-def organize_by_episode(dataset):
+def organize_by_episode(dataset: LeRobotDataset):
     episode_map = {}
     version = get_dataset_version(dataset.root)
+    hf_dataset = dataset.load_hf_dataset()
 
     # Get camera keys from features
     camera_keys = [k for k in dataset.meta.features.keys() if 'observation.images' in k]
@@ -440,13 +441,11 @@ def organize_by_episode(dataset):
         df_episodes = load_episodes_v30(dataset.root)
 
         # Get unique episode indices from the dataset
-        unique_episodes = set()
-        for dataset_idx in range(len(dataset)):
-            episode_idx = dataset[dataset_idx]["episode_index"].item()
-            unique_episodes.add(episode_idx)
+        # NOTE(shreetej): Feels a bit convoluted wrt operations, but not sure how to do it better.
+        unique_episodes = sorted(list(set(np.array(hf_dataset[:]["episode_index"]).tolist())))
 
         # Build video paths for each episode
-        for episode_idx in sorted(unique_episodes):
+        for episode_idx in unique_episodes:
             if episode_idx not in episode_map:
                 episode_map[episode_idx] = {
                     'vid_paths': {},
@@ -480,24 +479,16 @@ def organize_by_episode(dataset):
     for k in camera_keys:
         dataset.meta.features.pop(k, None)
 
-    for dataset_idx in range(len(dataset)):
-        timestamp = dataset[dataset_idx]["timestamp"]
-        state = dataset[dataset_idx]["observation.state"]
-        action = dataset[dataset_idx]["action"]
-        episode_idx = dataset[dataset_idx]["episode_index"].item()
+    for episode_idx in unique_episodes:
+        ep = dataset.meta.episodes[episode_idx]
+        ep_start = ep["dataset_from_index"]
+        ep_end = ep["dataset_to_index"]
 
-        if 'states' not in episode_map[episode_idx]:
-            episode_map[episode_idx]['states'] = []
+        timestamps = np.array(hf_dataset[ep_start:ep_end]["timestamp"])
+        obs_states = np.array(hf_dataset[ep_start:ep_end]["observation.state"])
+        actions = np.array(hf_dataset[ep_start:ep_end]["action"])
 
-        if 'actions' not in episode_map[episode_idx]:
-            episode_map[episode_idx]['actions'] = []
-
-        episode_map[episode_idx]['states'].append(
-            {
-                "q": state,
-                "t": timestamp
-            }
-        )
-        episode_map[episode_idx]['actions'].append(action)
+        episode_map[episode_idx]['states'] = [{'q': q, 't': t} for q, t in zip(obs_states, timestamps)]
+        episode_map[episode_idx]['actions'] = actions
 
     return episode_map
