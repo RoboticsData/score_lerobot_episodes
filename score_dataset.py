@@ -3,11 +3,13 @@ import json
 from typing import Dict, List, Tuple
 
 from score_lerobot_episodes.vlm import VLMInterface
-from score_lerobot_episodes.data import organize_by_episode, load_dataset_hf, save_filtered_dataset, get_scorable_video_path
+from score_lerobot_episodes.data import organize_by_episode, load_dataset_hf, save_filtered_dataset, get_scorable_video_path, get_scorable_video_segment
 from score_lerobot_episodes.scores import score_task_success, score_visual_clarity, score_smoothness, score_path_efficiency, score_collision, score_runtime, score_joint_stability, score_gripper_consistency, score_idle_velocity, score_actuator_saturation
-from score_lerobot_episodes.scores import build_time_stats           # (your helper from the other file)
+from score_lerobot_episodes.scores import build_time_stats, DatasetScorer     # (your helper from the other file)
 from train import start_training
 from score_lerobot_episodes.evaluation import get_eval_episodes, run_eval
+from score_lerobot_episodes.util import VideoSegment
+from score_lerobot_episodes.data import evaluate_episodes
 import hashlib
 import pickle
 import os
@@ -33,38 +35,6 @@ except Exception:
         from lerobot.constants import HF_LEROBOT_HOME
 
 from lerobot.configs.train import TrainPipelineConfig
-
-class DatasetScorer:
-    def __init__(self, vlm: VLMInterface, time_stats: dict):
-        def runtime_with_stats(vp, st, acts, vlm, task, nominal):
-            return score_runtime(
-                vp, st, acts, vlm, task, nominal,
-                time_stats=self.time_stats,       # ← new
-                outlier_penalty=0.0,              # or whatever you like
-            )
-        self.vlm = vlm
-        # TODO: If visual_clarity or runtime is too low, make it bad automatically
-        self.criteria = {
-            # "task_success":        (25, score_task_success),
-            "visual_clarity":      (20, score_visual_clarity),
-            "smoothness":          (10, score_smoothness),
-            "collision":           (10, score_collision),
-            "runtime":              (20, runtime_with_stats),
-            "actuator_sat": (10, score_actuator_saturation),
-            # "path_efficiency":     (10, score_path_efficiency),
-            # "joint_stability":         (5, score_joint_stability),
-            # "gripper_consistency":  (5, score_gripper_consistency),
-        }
-        self.time_stats = time_stats
-        self.norm = sum(w for w, _ in self.criteria.values())
-
-    def score(self, video_path, states, actions, task, nominal):
-        subs, total = {}, 0.
-        for k, (w, fn) in self.criteria.items():
-            val = fn(video_path, states, actions, self.vlm, task, nominal)
-            subs[k] = val
-            total += w * val
-        return total / self.norm, subs
 
 def main():
     ap = argparse.ArgumentParser()
@@ -104,41 +74,7 @@ def main():
     # ------------------------------------------------------------------
     #  Evaluate every episode
     # ------------------------------------------------------------------
-    rows, agg_mean = [], 0.0
-    output_data = []
-
-    for episode_index in episode_map:
-        episode = episode_map[episode_index]
-        episode_total = 0
-        for camera_type in episode['vid_paths']:
-            vid_path = episode['vid_paths'][camera_type]
-            video_info = episode.get('video_info', {}).get(camera_type, None)
-            states = episode['states']
-            actions = episode['actions']
-
-            # Get a scorable video path (extracts segment for v3.0, returns path for v2.1)
-            scorable_path, is_temp = get_scorable_video_path(vid_path, video_info)
-
-            try:
-                total, subs = scorer.score(scorable_path, states, actions, task, args.nominal)
-                rows.append((episode_index, camera_type, vid_path, total, subs))
-                #Append the raw data into a list of dictionaries for later JSON output.
-                output_data.append({
-                    "episode_id": episode_index,
-                    "camera_type": camera_type,
-                    "video_path": vid_path,
-                    "aggregate_score": total,
-                    "per_attribute_scores": subs
-                })
-                episode_total += total
-            finally:
-                # Clean up temporary video file if created
-                if is_temp and os.path.exists(scorable_path):
-                    os.remove(scorable_path)
-
-        agg_mean += episode_total 
-    agg_mean /= len(rows)
-        
+    rows, agg_mean, output_data = evaluate_episodes(episode_map, scorer, task, args.nominal)
 
     # Create the results directory if it doesn't exist.
     results_dir = "results"
@@ -206,21 +142,22 @@ def main():
     print(f'Average aggregate over {len(rows)} videos: {agg_mean:.3f}')
     print('')
 
+    good_episodes_list = [k for k in good_episodes if good_episodes[k]]
+    if len(good_episodes_list) == 0:
+        raise ValueError(f'All episodes filtered out, decrease threshold to fix this. Current threshold: {args.threshold}')
+    total_episodes = len(episode_map)
+    num_removed = total_episodes - len(good_episodes_list)
+
+    print(f'Percentage of episodes removed: {float(num_removed)/total_episodes}, total: {num_removed}')
+    print('')
+
+    # Need to find actual dataset path on disk.
+    dataset_path = args.root
+    if not dataset_path:
+        cache_dir = HF_LEROBOT_HOME
+        dataset_path = os.path.join(cache_dir, args.repo_id)
+
     if args.output:
-        good_episodes_list = [k for k in good_episodes if good_episodes[k]]
-        if len(good_episodes_list) == 0:
-            raise ValueError(f'All episodes filtered out, decrease threshold to fix this. Current threshold: {args.threshold}')
-        total_episodes = len(episode_map)
-        num_removed = total_episodes - len(good_episodes_list)
-
-        print(f'Percentage of episodes removed: {float(num_removed)/total_episodes}, total: {num_removed}')
-        print('')
-
-        # Need to find actual dataset path on disk.
-        dataset_path = args.root
-        if not dataset_path:
-            cache_dir = HF_LEROBOT_HOME
-            dataset_path = os.path.join(cache_dir, args.repo_id)
         #save the filtered dataset in the output args.output
         save_filtered_dataset(dataset_path, args.output, good_episodes_list, overwrite=args.overwrite)
         #load the filtered dataset using args.output as the root

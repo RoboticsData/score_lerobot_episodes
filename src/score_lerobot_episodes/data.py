@@ -5,11 +5,16 @@ from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata, LeRobotData
 import os
 import json
 import shutil
+import bisect
+import ffmpeg
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import tempfile
 import subprocess
+
+from score_lerobot_episodes.util import VideoSegment
+from score_lerobot_episodes.scores import DatasetScorer
 
 V21 = "v2.1"
 V30 = "v3.0"
@@ -103,6 +108,7 @@ def extract_video_segment(video_path, from_timestamp, to_timestamp, output_path=
 
     duration = to_timestamp - from_timestamp
 
+
     # Use ffmpeg to extract the segment
     cmd = [
         'ffmpeg',
@@ -133,6 +139,38 @@ def extract_video_segment(video_path, from_timestamp, to_timestamp, output_path=
         subprocess.run(cmd, capture_output=True, text=True, check=True)
 
     return output_path
+
+def get_video_duration(video_path: str) -> float:
+    """
+    Get the duration of a video file in seconds using ffmpeg.
+    """
+    probe = ffmpeg.probe(video_path)
+    video_stream = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+    return float(video_stream['duration'])
+
+def get_scorable_video_segment(video_path: str, video_info: dict | None = None) -> VideoSegment:
+    """
+    Get a video segment suitable for scoring.
+
+    Each video segment contains the video path and the start and end timestamps corresponding to the episode segment.
+
+    Args:
+        video_path: Path to the video file
+        video_info: Dict with from_timestamp and to_timestamp (v3.0 only)
+
+    Returns:
+        tuple: (video_path_for_scoring, is_temporary)
+               If is_temporary is True, caller should delete the file after use
+    """
+    if video_info is None or 'from_timestamp' not in video_info:
+        # get start and end timestamps from video_path
+        from_timestamp = 0.0
+        to_timestamp = get_video_duration(video_path)
+    else:
+        from_timestamp = video_info['from_timestamp']
+        to_timestamp = video_info['to_timestamp']
+
+    return VideoSegment(video_path, from_timestamp, to_timestamp)
 
 
 def get_scorable_video_path(video_path, video_info=None):
@@ -492,3 +530,41 @@ def organize_by_episode(dataset: LeRobotDataset):
         episode_map[episode_idx]['actions'] = actions
 
     return episode_map
+
+
+def evaluate_episodes(episode_map: dict, scorer: DatasetScorer, task: str, nominal: float | None = None):
+    rows, agg_mean = [], 0.0
+    output_data = []
+
+    for episode_index in episode_map:
+        print(f"Scoring episode {episode_index}...")
+        episode = episode_map[episode_index]
+        episode_total = 0
+        for camera_type in episode['vid_paths']:
+            vid_path = episode['vid_paths'][camera_type]
+            video_info = episode.get('video_info', {}).get(camera_type, None)
+            states = episode['states']
+            actions = episode['actions']
+
+            # Get a scorable video segment
+            scorable_video_segment = get_scorable_video_segment(vid_path, video_info)
+
+            try:
+                total, subs = scorer.score(scorable_video_segment, states, actions, task, nominal)
+                rows.append((episode_index, camera_type, vid_path, total, subs))
+                #Append the raw data into a list of dictionaries for later JSON output.
+                output_data.append({
+                    "episode_id": episode_index,
+                    "camera_type": camera_type,
+                    "video_path": vid_path,
+                    "aggregate_score": total,
+                    "per_attribute_scores": subs
+                })
+                episode_total += total
+            finally:
+                pass
+
+        agg_mean += episode_total 
+    agg_mean /= len(rows)
+
+    return rows, agg_mean, output_data
