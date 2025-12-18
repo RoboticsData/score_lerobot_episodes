@@ -1,8 +1,9 @@
 import numpy as np
+from score_lerobot_episodes.util import VideoSegment
 
 def rms(x, axis=None): return float(np.sqrt(np.mean(np.square(x), axis=axis)))
 
-def score_smoothness(vp, sts, acts, vlm, task, nom, *, k: float = 1000.0):
+def score_smoothness(video_segment: VideoSegment, sts, acts, vlm, task, nom, *, k: float = 1000.0):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
@@ -11,7 +12,7 @@ def score_smoothness(vp, sts, acts, vlm, task, nom, *, k: float = 1000.0):
     scores = float(np.exp(-rms(accel) / k))
     return np.mean(scores)
 
-def score_path_efficiency(vp, sts, acts, vlm, task, nom):
+def score_path_efficiency(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
@@ -25,7 +26,7 @@ def score_path_efficiency(vp, sts, acts, vlm, task, nom):
     scores = 0. if path < 1e-6 else float(np.clip(straight / path, 0., 1.))
     return np.mean(scores)
 
-def score_idle_velocity(vp, sts, acts, vlm, task, nom):
+def score_idle_velocity(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     threshold = 0.1
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
@@ -39,7 +40,7 @@ def score_idle_velocity(vp, sts, acts, vlm, task, nom):
 
     return 1-idle_ratio
 
-def score_collision(vp, sts, acts, vlm, task, nom):
+def score_collision(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
@@ -57,7 +58,7 @@ def score_collision(vp, sts, acts, vlm, task, nom):
     scores = max(0.0, 1.0 - spike_ratio)
     return np.mean(scores)
 
-def score_joint_stability(vp, sts, acts, vlm, task, nom):
+def score_joint_stability(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
@@ -76,7 +77,7 @@ def score_joint_stability(vp, sts, acts, vlm, task, nom):
     scores = float(np.exp(-joint_std / 0.05))  # adjust denominator for sensitivity
     return np.mean(scores)
 
-def score_gripper_consistency(vp, sts, acts, vlm, task, nom):
+def score_gripper_consistency(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
     timestamps = np.array([st["t"] for st in sts])
     if (states == None).any():
@@ -89,7 +90,7 @@ def score_gripper_consistency(vp, sts, acts, vlm, task, nom):
     scores = max(0., min(1., (agree - 0.1) / 0.9))
     return np.mean(scores)
 
-def score_actuator_saturation(vp, sts, acts, vlm, task, nom, *, threshold_deg: float = 7):
+def score_actuator_saturation(video_segment: VideoSegment, sts, acts, vlm, task, nom, *, threshold_deg: float = 7):
     states = np.array([st.get("q") for st in sts])
     if (states == None).any():
         raise ValueError('Invalid state vector')

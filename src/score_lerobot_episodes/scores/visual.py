@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from score_lerobot_episodes.vlm import VLMInterface
+from score_lerobot_episodes.util import VideoSegment, iterate_frames_in_range
 
 ##SCORING FRAME FUNCTIONS
-
 
 def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
     # Calculate Laplacian variance
@@ -47,19 +47,16 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
 ##VIDEO SCORING FUNCTIONS
 
 def score_visual_clarity(
-    vp: str | pathlib.Path,
+    video_segment: VideoSegment,
     sts,                       # unused but kept for signature compatibility
     acts,                      # unused but kept for signature compatibility
     vlm,                      # may be None
     task, nom,                # also unused here
     sample_every: int = 60
 ) -> float:
-    cap = cv2.VideoCapture(str(vp))
+
     penalties, i = [], 0
-    while cap.isOpened():
-        ok, frame = cap.read()
-        if not ok:
-            break
+    for frame in iterate_frames_in_range(video_segment):
         i += 1
         if i % sample_every:
             continue
@@ -70,7 +67,7 @@ def score_visual_clarity(
             penalty = score_negative_visual_quality_opencv(frame)
 
         penalties.append(float(penalty))
-    cap.release()
+
     return 0.0 if not penalties else max(0.0, 1.0 - np.mean(penalties))
 
 if __name__ == '__main__':

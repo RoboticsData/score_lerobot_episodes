@@ -15,6 +15,7 @@ dependencies = [
     "python-dotenv",
     "uniplot",
     "pyarrow",
+    "ffmpeg-python>=0.2.0",
 ]
 
 [build-system]

@@ -1,6 +1,6 @@
 import cv2, numpy as np, pathlib
 
-from .visual import score_visual_clarity, calculate_blur_score, calculate_contrast_score, calculate_darkness_score
+from .visual import VideoSegment, score_visual_clarity, calculate_blur_score, calculate_contrast_score, calculate_darkness_score
 from .path import score_smoothness, score_path_efficiency, score_idle_velocity, score_collision, score_joint_stability, score_gripper_consistency, score_actuator_saturation
 
 def build_time_stats(states):
@@ -56,3 +56,36 @@ def score_runtime(vp, sts, acts, vlm, task, nom,
         return outlier_penalty
 
     return 1
+
+class DatasetScorer:
+    def __init__(self, vlm, time_stats: dict):
+        def runtime_with_stats(vp, st, acts, vlm, task, nominal):
+            return score_runtime(
+                vp, st, acts, vlm, task, nominal,
+                time_stats=self.time_stats,       # ← new
+                outlier_penalty=0.0,              # or whatever you like
+            )
+        self.vlm = vlm
+        # TODO: If visual_clarity or runtime is too low, make it bad automatically
+        self.criteria = {
+            # "task_success":        (25, score_task_success),
+            "visual_clarity":      (20, score_visual_clarity),
+            "smoothness":          (10, score_smoothness),
+            "collision":           (10, score_collision),
+            "runtime":              (20, runtime_with_stats),
+            "actuator_sat": (10, score_actuator_saturation),
+            # "path_efficiency":     (10, score_path_efficiency),
+            # "joint_stability":         (5, score_joint_stability),
+            # "gripper_consistency":  (5, score_gripper_consistency),
+        }
+        self.time_stats = time_stats
+        self.norm = sum(w for w, _ in self.criteria.values())
+
+    def score(self, video_segment: VideoSegment, states, actions, task, nominal):
+        subs, total = {}, 0.
+        for k, (w, fn) in self.criteria.items():
+            val = fn(video_segment, states, actions, self.vlm, task, nominal)
+            subs[k] = val
+            total += w * val
+        return total / self.norm, subs
+
