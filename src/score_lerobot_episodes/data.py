@@ -525,9 +525,12 @@ def organize_by_episode(dataset: LeRobotDataset):
         timestamps = np.array(hf_dataset[ep_start:ep_end]["timestamp"])
         obs_states = np.array(hf_dataset[ep_start:ep_end]["observation.state"])
         actions = np.array(hf_dataset[ep_start:ep_end]["action"])
+        task_idx = hf_dataset[ep_start]["task_index"].item()
+        task = dataset.meta.tasks.iloc[task_idx].name
 
         episode_map[episode_idx]['states'] = [{'q': q, 't': t} for q, t in zip(obs_states, timestamps)]
         episode_map[episode_idx]['actions'] = actions
+        episode_map[episode_idx]['task'] = task
 
     return episode_map
 
