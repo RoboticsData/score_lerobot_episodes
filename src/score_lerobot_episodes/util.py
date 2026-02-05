@@ -31,6 +31,7 @@ def iterate_frames_in_range(video_segment: VideoSegment, output_width=-1):
             ffmpeg
             .input(video_path, ss=start_time_seconds, t=duration_seconds)
             .output('pipe:', format='rawvideo', pix_fmt='rgb24', vframes=999999) # Set vframes high enough to cover the duration
+            .global_args("-nostdin")
             .run_async(pipe_stdout=True, pipe_stderr=True)
         )
 
