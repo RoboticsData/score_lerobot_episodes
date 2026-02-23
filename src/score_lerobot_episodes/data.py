@@ -564,8 +564,9 @@ def evaluate_episodes(episode_map: dict, scorer: DatasetScorer, task: str, nomin
                     "per_attribute_scores": subs
                 })
                 episode_total += total
-            finally:
-                pass
+            except Exception as e:
+                print(f"Error scoring episode {episode_index} camera {camera_type}: {e}")
+                continue
 
         agg_mean += episode_total 
     agg_mean /= len(rows)

@@ -62,11 +62,11 @@ class DatasetScorer:
         def runtime_with_stats(vp, st, acts, vlm, task, nominal):
             return score_runtime(
                 vp, st, acts, vlm, task, nominal,
-                time_stats=self.time_stats,       # ← new
-                outlier_penalty=0.0,              # or whatever you like
+                time_stats=self.time_stats,
+                outlier_penalty=0.0,
             )
+
         self.vlm = vlm
-        # TODO: If visual_clarity or runtime is too low, make it bad automatically
         self.criteria = {
             # "task_success":        (25, score_task_success),
             "visual_clarity":      (20, score_visual_clarity),
@@ -84,8 +84,14 @@ class DatasetScorer:
     def score(self, video_segment: VideoSegment, states, actions, task, nominal):
         subs, total = {}, 0.
         for k, (w, fn) in self.criteria.items():
-            val = fn(video_segment, states, actions, self.vlm, task, nominal)
+            try:
+                val = fn(video_segment, states, actions, self.vlm, task, nominal)
+            except Exception as e:
+                print(f"Score '{k}' failed: {e}")
+                val = None
             subs[k] = val
-            total += w * val
-        return total / self.norm, subs
+            if val is not None:
+                total += w * val
+        scored_norm = sum(w for k, (w, _) in self.criteria.items() if subs[k] is not None)
+        return (total / scored_norm if scored_norm else 0.), subs
 
