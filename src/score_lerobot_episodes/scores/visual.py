@@ -31,6 +31,37 @@ def calculate_contrast_score(gray: np.ndarray, max_std: float = 80.0) -> float:
 
     return float(normalized)
 
+def calculate_exposure_score(gray: np.ndarray, use_center_weighting: bool = True) -> float:
+    """
+    Computes an exposure score (0.0 to 1.0) where 1.0 is perfectly exposed.
+    Uses optional center-weighting
+    """
+
+    h, w = gray.shape
+
+    if use_center_weighting:
+        # Create a 2D Gaussian Center-Weighting Mask
+        # The intuition is that the center of the image is usually more important.
+        x = np.linspace(-1, 1, w)
+        y = np.linspace(-1, 1, h)
+        x_grid, y_grid = np.meshgrid(x, y)
+        kernel = np.exp(-(x_grid**2 + y_grid**2) / (2 * 0.5**2))
+        kernel = kernel / np.sum(kernel) # Normalize mask
+
+        # Calculate Weighted Mean
+        weighted_mean = np.sum(gray * kernel)
+    else:
+        weighted_mean = gray.mean()
+
+    # Target Exposure (18% Gray in sRGB is ~117-128)
+    target = 127.5
+    exposure_err = abs(weighted_mean - target) / target # 0 is perfect, 1 is total black/white
+
+
+    # Final Score Calculation
+    # We invert the error so that higher = better.
+    return max(0, 1.0 - exposure_err)
+
 def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -43,6 +74,7 @@ def score_negative_visual_quality_opencv(frame: np.ndarray) -> float:
     exposure_penalty = 1.0 - dark_score 
 
     return max(blur_penalty, exposure_penalty)
+
 
 ##VIDEO SCORING FUNCTIONS
 
