@@ -17,6 +17,8 @@ dependencies = [
     "pyarrow",
     "ffmpeg-python>=0.2.0",
     "scipy>=1.15.3",
+    "pytest>=9.0.2",
+    "matplotlib>=3.10.8",
 ]
 
 [build-system]
