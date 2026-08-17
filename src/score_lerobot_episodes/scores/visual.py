@@ -2,14 +2,14 @@ import cv2
 import numpy as np
 import argparse, pathlib, re, sys, warnings, cv2, numpy as np, pandas as pd
 from score_lerobot_episodes.vlm import VLMInterface
-from score_lerobot_episodes.util import VideoSegment, iterate_frames_in_range
+from score_lerobot_episodes.util import VideoSegment, iterate_frames_in_range, FrameDecodeError
 
 ##SCORING FRAME FUNCTIONS
 
 def calculate_blur_score(gray: np.ndarray, max_var: float = 1000.0) -> float:
     # Calculate Laplacian variance
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-    
+
     # Typical ranges: <100 = blurry, >500 = sharp
     normalized = min(laplacian_var / max_var, 1.0) # Normalize to 0-1 range
 
@@ -87,20 +87,38 @@ def score_visual_clarity(
     sample_every: int = 60
 ) -> float:
 
-    penalties, i = [], 0
+    def measure(frame) -> float:
+        if vlm is not None and hasattr(vlm, "negative_visual_quality"):
+            return float(vlm.negative_visual_quality(frame))
+        return float(score_negative_visual_quality_opencv(frame))
+
+    penalties, i, first_frame = [], 0, None
     for frame in iterate_frames_in_range(video_segment):
         i += 1
+        if first_frame is None:
+            first_frame = frame
+
         if i % sample_every:
             continue
 
-        if vlm is not None and hasattr(vlm, "negative_visual_quality"):
-            penalty = vlm.negative_visual_quality(frame)
-        else:
-            penalty = score_negative_visual_quality_opencv(frame)
+        penalties.append(measure(frame))
 
-        penalties.append(float(penalty))
+    # A segment shorter than sample_every frames never reaches the first
+    # sampling point, so it collected nothing despite decoding fine. Measure
+    # its opening frame instead. Sampling is deliberately left unchanged for
+    # longer segments so their existing scores do not move.
+    if not penalties and first_frame is not None:
+        penalties.append(measure(first_frame))
 
-    return 0.0 if not penalties else max(0.0, 1.0 - np.mean(penalties))
+    # Returning 0.0 here would report the worst possible clarity for a segment
+    # that was never measured, and that score feeds the keep/discard decision.
+    if not penalties:
+        raise FrameDecodeError(
+            f"No frames decoded from {video_segment.video_path} between "
+            f"{video_segment.from_timestamp}s and {video_segment.to_timestamp}s, "
+            f"so visual clarity cannot be scored")
+
+    return max(0.0, 1.0 - np.mean(penalties))
 
 if __name__ == '__main__':
     score = score_visual_clarity(
