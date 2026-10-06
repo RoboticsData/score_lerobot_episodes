@@ -52,8 +52,10 @@ def score_collision(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     # Compute second derivative (acceleration proxy) in joint space
     accel = np.diff(states, n=2, axis=0) / (np.diff(timestamps)[:-1, None] ** 2)
 
-    # Detect "spikes" in joint-space acceleration
-    threshold = 15.0 * np.median(np.abs(accel), axis=0, keepdims=True)
+    # Detect "spikes" in joint-space acceleration. Scale by the mean, not the
+    # median: a joint that holds still for more than half the episode has a
+    # median |accel| of 0, and a zero threshold flags every frame it moves on.
+    threshold = 15.0 * np.mean(np.abs(accel), axis=0, keepdims=True)
     spike_mask = np.any(np.abs(accel) > threshold, axis=1)
 
     # Score is high if few or no spikes
