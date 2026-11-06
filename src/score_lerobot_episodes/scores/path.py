@@ -43,23 +43,60 @@ def score_idle_velocity(video_segment: VideoSegment, sts, acts, vlm, task, nom):
 
     return 1-idle_ratio
 
-def score_collision(video_segment: VideoSegment, sts, acts, vlm, task, nom):
-    states = np.array([st.get("q") for st in sts])
-    timestamps = np.array([st["t"] for st in sts])
-    if (states == None).any():
-        raise ValueError('Invalid state vector')
+def collision_spike_mask(sts, *, k=8.0, tail_q=95.0, tail_mult=2.5,
+                         min_active=8, eps=1e-12):
+    """Flag collision-like acceleration spikes, one threshold per joint.
 
-    # Compute second derivative (acceleration proxy) in joint space
+    The old implementation used ``15 * median(|accel|)`` over all frames.
+    Real teleoperation episodes hold joints still for long stretches, so the
+    per-joint median is 0 -> threshold 0 -> every frame on which the joint
+    moves at all is flagged (see issue #48: 99.4% of frames on the README
+    Quick Start dataset). Replacing the median with a mean over all frames
+    fixes that case but makes the threshold depend on how long the operator
+    waited before moving, which is unacceptable for a *score*.
+
+    Here the threshold is estimated from the moving frames only:
+
+        thr_j = max(k * median(active), tail_mult * quantile(active, tail_q))
+
+    * ``active`` = |accel| samples above ``eps`` (i.e. frames where the joint
+      is actually moving). Zero-inflation from still frames is excluded, so
+      the score is invariant to idle padding.
+    * The median is robust to isolated spikes (a mean would be inflated by
+      the very spikes we want to detect).
+    * The tail term protects joints with legitimately fast motion (heavy
+      tailed |accel|) from being read as collisions. A 95th percentile is
+      used deliberately: a 99th percentile can be contaminated by the very
+      spikes we are looking for when they occupy >1% of the moving frames,
+      inflating the threshold until the spikes hide themselves.
+    * Joints with fewer than ``min_active`` moving frames are treated as
+      static and never flagged (their threshold stays +inf).
+
+    Returns a boolean array of length ``len(sts) - 2`` (accel frame index).
+    """
+    states = np.array([st.get("q") for st in sts], dtype=float)
+    timestamps = np.array([st["t"] for st in sts], dtype=float)
+    if len(states) < 3:
+        return np.zeros(len(states), dtype=bool)
+
     accel = np.diff(states, n=2, axis=0) / (np.diff(timestamps)[:-1, None] ** 2)
+    abs_accel = np.abs(accel)
+    thresholds = np.full(abs_accel.shape[1], np.inf)
+    for j in range(abs_accel.shape[1]):
+        active = abs_accel[:, j][abs_accel[:, j] > eps]
+        if len(active) < min_active:
+            continue
+        thresholds[j] = max(k * np.median(active),
+                            tail_mult * np.percentile(active, tail_q))
+    return np.any(abs_accel > thresholds, axis=1)
 
-    # Detect "spikes" in joint-space acceleration
-    threshold = 15.0 * np.median(np.abs(accel), axis=0, keepdims=True)
-    spike_mask = np.any(np.abs(accel) > threshold, axis=1)
 
-    # Score is high if few or no spikes
-    spike_ratio = np.mean(spike_mask)
-    scores = max(0.0, 1.0 - spike_ratio)
-    return np.mean(scores)
+def score_collision(video_segment: VideoSegment, sts, acts, vlm, task, nom):
+    """Score = 1 - fraction of frames with collision-like acceleration spikes."""
+    spike_mask = collision_spike_mask(sts)
+    if not len(spike_mask):
+        return 1.0
+    return float(max(0.0, 1.0 - np.mean(spike_mask)))
 
 def score_joint_stability(video_segment: VideoSegment, sts, acts, vlm, task, nom):
     states = np.array([st.get("q") for st in sts])
